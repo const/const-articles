@@ -1,0 +1,165 @@
+= Evolution of Database Languages (Part 3)
+:toc:
+:toclevels: 3
+:author: Konstantin Plotnikov user avatar Konstantin Plotnikov · Jan. 25, 19 · Opinion
+:docdate: 2019-01-25
+
+The article “link:../1-abstraction-tiers-of-notation/README.adoc[Abstraction Tiers of Notations, Part 1]” introduced abstraction tier concept, and in the article “link:../2-next-generation-language/README.adoc[New Generation of Programming Languages? Part 2]” I have tried to apply it to the evolution of the general-purpose programming languages. However, this framework is applicable to domain-specific languages as well. Let’s consider one of the most popular domains, where DSLs are widely used: data manipulation languages.
+
+== Current State
+
+Firstly, let’s briefly examine current technologies available on the market. We will consider only employed abstraction tiers of data manipulation language for the database technologies while ignoring other aspects like distribution models, transaction support, or performance. While these aspects are very important for technology selection, they are orthogonal to the supported abstraction tiers.
+
+=== Key-Value Stores
+Classic https://en.wikipedia.org/wiki/Key-value_database[key-value databases] like Berkeley DB provide simple mapping from key to value. No query languages are supported. The presence of the flat namespace makes the technology belonging to the tier 2. More advanced structured key-value databases like http://cassandra.apache.org/[Cassandra] have query languages that are able to consider a single record, joins are not supported natively, but they could be implemented with tools that work above Cassandra like https://en.wikipedia.org/wiki/Apache_Spark[Apache SparkSQL]. Thus, the tier of these databases could be classified as 2.1.
+
+=== Relational Databases
+
+==== Early SQL
+The early https://en.wikipedia.org/wiki/SQL[SQL] added a limited form of links between tables and query languages allowed to use several tables in the single query using joins. So, the tier 2 “patterns” is fully implemented on state and behavior aspects. This is major advancement comparing to the key-value stores from point of view of used abstractions.
+
+It could be noted, that the tier 2 constructs (the sequences and flat mapping from names) are used everywhere in the SQL.
+
+* The database/catalog/schema/table structure, where each tier has flat space nested items. While this could be considered as some attempt of hierarchy, it is not a truly hierarchical namespace structure. This could be contrasted with the truly hierarchical namespaces in Java or C#.
+* All tables should be used on the same level in the single select for FROM clause. Usage of subqueries in the FROM clause was https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=6359709[standardized only in SQL 92].
+* The table is a sequence of rows, and the row is a mapping from names to values.
+
+Practically the only place where truly hierarchical constructs were supported were expressions in where and select clauses. Thus, this family of languages could be classified as tier 2.2.
+
+==== Modern SQL
+Due to the complexity pressure, the SQL language started to adopt a limited set of hierarchical constructs. However, these constructs still having limits that do not allow to classify them as truly hierarchical.
+
+* There are subselects supported in WHERE clause, however, there are some limitations on how they are supported (for example, nested subselects are allowed only in some places). Subselects are also cannot have usage-site-specific parameters in case of WITH clause for https://www.essentialsql.com/introduction-common-table-expressions-ctes/[Common Table Expressions]. They are simple mapping from name to data set.
+* There are datatypes, and one datatype could be used in the definition of other data type, but it is not possible to define recursive data types. This causes features like JSON support to be implemented in a special way, rather than as a library.
+* There is a limited form of recursive queries in the form of Common Table Expressions. However, such queries produce a flat set of records. These queries also use a fixed-point semantics, so previous iterations of recursive processing have to be included in the final result.
+* There are https://docs.oracle.com/en/database/oracle/oracle-database/18/adobj/Sql-object-types-and-references.html#GUID-2CF01222-312F-4778-9013-BB91DFBD3B08[record reference] types in some databases, but they are not well integrated with the rest of the language, for example, it is easy to get dangling pointers and it hard to use them in constraints.
+
+Considering these features and limitations, the modern SQL could be classified as tier 2.3.
+
+=== Network Databases
+https://en.wikipedia.org/wiki/Network_model[Network database model] could be considered an early attempt to support building graphs of the records. This database model supported navigation over such graph and node pointers. This is a feature of the 3rd generation language.
+
+However, the data access language that is supported is more like a https://en.wikipedia.org/wiki/Navigational_database[data navigation language] than a data query language. It is not possible to produce graph query results. So, I think these languages are of tier 3.1.
+
+=== Graph Databases (current state)
+The https://en.wikipedia.org/wiki/Graph_database[graph databases] support pointers, they support truly recursive data structures. However, there are some limitations as well:
+
+* There is no full recursion in queries. Some limited forms are supported (like transitive relationships).
+* Recursive structures could not be returned in the result.
+* Recursive structures could not be passed as a parameter to the query to guide a query execution.
+* Recursive structures could not be used as discarded intermediate results (like subselects in SQL).
+
+These limitations are present in all graph query languages that I have checked. If there is an exception, I would like to learn about it. These limitations allow us to classify the current batch of the graph databases as the tier 3.2.
+
+https://en.wikipedia.org/wiki/Object_database[Object databases] could be also classified as a form of graph databases. The OQL language is a good query language (however, still of tier 3.2) for graphs and I personally like it more than other query languages for graphs.
+
+== NoSQL vs. PreSQL and PostSQL
+The classification by the abstraction tiers shows, that not every https://en.wikipedia.org/wiki/NoSQL[NoSQL] database is created equal. Key-value storage could be classified as PreSQL or pre-relational. The graph databases could be classified as PostSQL or port-relational. Alternative implementations of the relational model like the D-derived database languages offer different surface syntax for practically the same abstractions as SQL. I think that NoSQL is a somewhat confusing terminology, as it says little about the usability of the technology.
+
+=== Next Minor Generation
+As we have seen in the previous section, the highest tier of the database language available is tier 3.2. The next sub-tier 3.3 would be in some sense a complete the tier 3 database technology. Let’s try to formulate criteria for the stage 3.3 database basing on the general-purpose programming language experience:
+
+* [*] (done) Explicit references
+* [*] (done) Recursive structures
+* [*] References to concrete types
+* [ ] (partial) Recursive query definition (there is hierarchical decomposition, but usually no parameters are supported)
+* [ ] (to do) Introduction of explicit or implicit graph concept (an object that owns entities and relationships and provides own scope and has own lifetime) and acyclic relationship between graphs (graph object could refer to parent graphs, but not reverse). This could be also used to organize better analog of RDBMS catalogs/schemas in graphs databases.
+* [ ] (to do) Recursive/graph query results (JPA EntityGraphs is the closest existing thing here, but it allows only existing entities, rather than arbitrary object graph)
+* [ ] (to do) Recursive/graph structures as parameters (including collections of recursive structures and undefined depth of structures)
+* [ ] (to do) Recursive/graph sub-query results (intermediate results, reused in further queries)
+
+To understand the difference between tier 2.3 queries and tier 3.3 queries, let’s consider an SQL query that counts items in category starting with some initial category.
+
+[source, sql]
+----
+WITH RECURSIVE rec_categories(id, name, parent_id) AS (
+    SELECT id, name, parent_id FROM category
+    WHERE name = :name AND parent_id IS NULL
+
+    UNION ALL
+
+    SELECT c.id AS id, c.name AS name, c.parent_id AS parent_id
+    FROM category c, rec_categories r
+    WHERE c.parent_id = r.id
+), item_counts AS (
+    SELECT category_id, count(*) AS itemCount
+    FROM item GROUP BY category_id
+)
+SELECT r.id AS id, r.name AS name, r.parent_id AS parent_id,
+    COALESCE(ic. itemCount, 0) AS itemCount
+FROM rec_categories r LEFT JOIN item_counts ic ON ic.category_id = r.id
+----
+As it could be seen, the result is flat structure. The query parameter “:name” is passed implicitly and it is global to the query and it is used in the sub-query directly.
+
+Now, let’s formulate the same query using a hypothetical tier 3.3 query language based on LINQ.
+
+[source]
+----
+def (categoryName : String) = {
+    def countItems(cat : Category) = #(
+        name: cat.name,
+        itemCount: cat.items.count(),
+        children: from child in cat.children select countItems(child)
+    );
+    from cat in root.categories where cat.name = categoryName select countItems(cat)
+}
+----
+What could be seen here:
+
+* Recursion is explicit, and it follows the data graph
+* Recursive data structure is returned, and it is constructed on fly
+* The query parameters are explicit
+* The subqueries have parameters
+* The structure of the query code follows the structure of returned result.
+
+The third-generation database languages will require an update of the database access API to support hierarchical results. For JDBC, we would need some methods like getResultSet(int pos) or getResultSet(String name) to navigate into sub-structure results, but specific database driver could possibly use getObject(...) as an escape hatch for this until the feature is supported in the standard. Most graph databases already have some kind of graph walking API, and extending this API to support query results looks like a natural step.
+
+Support of the true recursion in the query language will bring additional implementation challenges and new kinds of performance problems. However, on the other hand, it will also bring usability improvements, as queries will be more natural to formulate and easier to support.
+
+== Next Major Generation
+The third-generation database technologies are not completely here yet, but it is possible to make a wild guess what will be criteria for the fourth-generation database languages, basing on the experience of the evolution of general-purpose languages.
+
+* Meta-structures, meta-functions, and meta-relationships (like audited graphs as the library, and generic structures like ‘time series’)
+* Black box graph abstraction. For example, ability store lambdas or graph interface instances in the node fields and use them in queries. Ability to use them to formulate queries. There might be a worry that a black box will not allow flexible queries, but a good black box will allow needed queries while prohibiting bad ones. Also, none forbids the optimizer to take a pick into a real implementation (like modern JIT compilers do).
+* Virtual graphs (possibly mutable graph views, materialized or not). This is just another aspect of the previous item. The truly black-box abstraction should expose itself as a graph conforming to some schema.
+* Precise garbage collection, entity lifetime by reachability from roots (needed for previous items, as links become unpredictable and possibly circular due to the black-box abstractions).
+* Generic references to fields, types, and so on. Ability to formulate queries where some other relationship is a typed parameter.
+(possibly) Dynamic storage elements (event queues and topics, support for business processes)
+
+Like with programming languages, we will likely see that new generations of the databases are slower until efficient optimization methods are developed. For example, garbage collection is hard in persistent storage, and in the cloud context where we are hit hard by CAP-theorem, so the cloud implementation could be even harder. But after some time, the optimization methods will be developed.
+
+If this vector of the development is considered, we could see coming problems earlier. For example, it could be already guessed that there is a need for database-wide garbage collection. Some approaches that minimize IO like generational database garbage collection could be started to be developed now as research projects.
+
+I think that it is too early to guess what the fifth generation of database languages will look like, as we are not there with general-purpose programming languages yet.
+
+== Object-Relational Mapping
+This classification allows us to get some insights into https://en.wikipedia.org/wiki/Object-relational_mapping[object-relational mapping] frameworks. If we consider an object-relational mapping framework as an internal domain-specific language, it could be seen, that they of the same abstraction tier as object databases and graph databases.
+
+So, an object-relational mapping framework is an implementation of the tier 3.2 language over the tier 2.3 language.
+
+With the adoption of graph database languages, we could expect that https://en.wikipedia.org/wiki/Object-relational_impedance_mismatch[object-relational impedance mismatch] will be solved in many aspects, as graph databases allow more direct mapping. However, the general-purpose programming languages are of tier 4 now, and tier 5 is coming soon. So, we could expect that new impedance mismatch will appear object-graph impedance mismatch, as the following features are possible in the application development languages, but they are not possible in the tier 3 graph databases:
+
+* Generics
+* Virtual graphs
+* Garbage-collection
+* Storing dynamic behavior elements, implementing persistent behavior (business processes)
+
+This mismatch could give a reason for a new generation of object-database mapping technologies. Even when this is solved by upgrading the database technologies to the tier 4, we could expect the next impedance mismatch as well with the development of general-purpose programming languages. Considering that development of general-purpose programming languages is somewhat simpler than the development of database technologies, such mismatches are hard to avoid.
+
+== Orthogonal Dimension: Distribution Scenario
+If we consider database evolution, it happens in several dimensions. The dimension that is discussed in this article is the abstraction tiers dimension. However, there are other critical dimensions, for example, distribution scenarios. If we order by implementation complexity, we will get the following scenarios:
+
+* Serialization (textual or binary)
+* Embedded
+* Client-server
+* Clustered client-server
+* Cloud (high distribution, possible partitioning, unreliable and regularly failing nodes)
+
+Each distribution scenario radically changes implementation methods because it changes operation cost. And each next scenario is more difficult to implement. If we consider these distribution scenarios, the adoption of abstraction tiers for each model happens sequentially, and more complex model is, the later abstraction tiers are adopted. The cloud data storage solution started with serialization-class solutions (for example, https://en.wikipedia.org/wiki/Google_File_System[Google File System] which offered opaque read-write operation), only later key-value storage was adopted (Cassandra and others). Now, relational solutions are starting to appear (https://ignite.apache.org/[Apache Ignite] and others). On the other hand, for the serialization model, there is already the tier 4 support implemented, as it is possible to serialize almost any Java object, including generics. It is not realistic to expect that new abstraction tiers will be supported in cloud context immediately, they will be likely first adopted on the smaller scale, and they will evolve to support more complex distribution models.
+
+== Conclusion
+The database-related languages have been relatively “stable” for a long time. As an application developer, I do not enjoy writing complex SQL queries when they are longer than 10 lines. Writing 200+ line queries is usually a horror story to remember. Comparing to that, 200 lines Java method or C procedure is nothing special and they are relatively easy to manage and understand with some discipline. Both C and Java allow to decompose it further to reduce cognitive load if it is hard to understand. This demonstrates a huge gap in the usability of the languages. I think that this is not an inherent feature of database technologies and there is a space for improvements.
+
+Graph database languages and object databases were a major recent breakthrough in the area of usability, but for some reason, the evolution of these languages has paused as the languages underuse potential of this data model and stick to queries that are relatively directly compliable to relational queries.
+
+The evolution of languages happens under the complexity pressure and that pressure is external as it is derived from a business requirement that requires more and more complex behavior from applications. Thus, the complexity of queries could only grow up, and application developers need tools to manage this complexity. I think that the abstraction tiers model gives us a way to predict the next steps in this evolution for short and long terms, and we could skip some trials and errors and directly reuse experiences from the evolution of general-purpose programming languages.

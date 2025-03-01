@@ -1,0 +1,140 @@
+= Abstraction Tiers of Notations (Part 1)
+:toc:
+:toclevels: 3
+:author: Konstantin Plotnikov
+:docdate: 2019-01-19
+
+Today, there are a lot of big and small languages being designed. In some sense, even the libraries or frameworks could be considered as new sub-languages as well, since they introduce new lexical elements (the names of library components) and new syntax constructs (the expected patterns of usage or internal DSLs). While we are designing new programming languages, new DSLs, and new libraries, there are a lot of factors to consider in order to get a usable product.
+
+There is a somewhat stalled effort named https://en.wikipedia.org/wiki/Cognitive_dimensions_of_notations[cognitive dimensions of notations]. There are a lot of useful dimensions considered there, and I suggest to read articles about these dimensions. However, I think that the abstraction dimension is not sufficiently defined, so in this article, I will introduce an additional dimension (that could be considered as a part of the abstraction dimension) that could be used to evaluate languages.
+
+== Abstraction Tier Dimension
+A typical programming language uses multiple abstractions. However, if we will look from meta-perspective, we will see that while there are a lot of programming languages, they are using practically the same concepts with different syntax. It is also possible to notice that abstractions are tiered.
+
+Let’s define abstraction tiers. In this article, I’ll discuss only well-defined tiers, the next tier will be the subject of the separate article as it is more controversial.
+
+=== Chaos (Tier 0)
+No abstraction belongs to this tier, so it is the zero point of the dimension. This is the state before any abstraction or concept is introduced. This is an important starting point when we introduce abstractions and we try to transfer information to others.
+
+=== Objects (Tier 1)
+The next abstraction tier is the tier of singular objects. And if we consider dynamic aspects of the system, the singular actions over the single object. On this meta-abstraction tier, we split chaos into objects. The objects we consider here are opaque, so we do not consider their substructure, and we cannot work with their structural components directly.
+
+The logic of this tier is reflex-response actions. We recognize the object from chaos and select one of the associated action to execute.
+
+The closest thing for such an abstraction in the area of computing is an input language for a simple non-programmable calculator. There is an object in some state, and we press buttons to modify its state. While we keep in mind a more complex model of calculation (particularly with binary operations), the input language of calculator does not reflect this; it is just simple button presses, where each button press is evaluated independently depending on current state. If we consider wide scope, the most of household appliances also support input languages of this tier. They usually have few buttons that change the state of the device.
+
+The https://en.wikipedia.org/wiki/The_Magical_Number_Seven,_Plus_or_Minus_Two[Miller’s number] (7±2) indicates the number of independent objects human could realistically work with at the same time.
+
+=== Patterns (Tier 2)
+The next abstraction tier organizes objects and actions into the single-level groups. The simplest such construct is a sequence of elements. Another important construct is the pattern with role names relative to the pattern. This tier is built upon the previous tier, as to organize objects one to have objects first. The dynamic aspect of this tier is recipes (for example, typical culinarian recipes) where there is a flat list of actions and the explicit transfer between actions by the name or the action number.
+
+The logic enabled by this tier is transduction (or reasoning by the analogy). We could compare patterns, and if patterns are structurally similar, we could expect that the result is similar as well.
+
+The programming languages that are limited to constructs of this tier are FORTRAN 66 (the later versions added higher-tier constructs), the classical BASIC, and simple assembler languages (the macro assemblers added higher-tier constructs as well). The programming languages limited to this tier have a global namespace. Control transfer to specific named actions (by label or line number). If language is limited by this tier, the namespace is flat. The data structures limited by multidimensional arrays and global variables. The state machines (without substates) or classical flow diagrams are also languages of this tier.
+
+The https://en.wikipedia.org/wiki/Dunbar%27s_number[Dunbar’s number] (100-230) indicates the number of objects in the pattern human could realistically work with. The difference with Miller’s number is due to the fact that objects are not independent, but they are organized in the pattern. Actually, the many memorizing tricks involve creating some artificial structure over independent elements.
+
+=== Hierarchies (Tier 3)
+The next abstraction tier is the tier of hierarchies. The key difference for this tier is a pattern that could refer not only to the concrete object, but it could also refer to another pattern by containment or by reference. The important thing to note is the node in the hierarchy is a pattern (node information, link to parent, link to children), rather than an object. Sometimes, a pattern is trivial (the single object pattern), but it is still a pattern. So, the hierarchy tier is built upon the pattern tier.
+
+The logic that is enabled by hierarchies is induction and deduction over the concrete objects and simple classifications. Hierarchies enable us to organize conclusions in a hierarchy as well, and these conclusions could follow hierarchical structures as well.
+
+The programming languages limited by this tier are C and the classical Pascal (Object Pascal is the next tier language). On the structural side, these languages, structures, and pointers, as new constructs, have global variables and arrays inherited from the previous tier. However, arrays now could contain pointers and structures as well. On the dynamic side, we could see hierarchies applied locally and globally. Locally, the code is organized in the hierarchy of the nested blocks. Globally, there is a tree of procedure/function calls.
+
+It is hard to say what is the human limit of working of the hierarchies. I have not found specific research on this area. However, if we look at modern enterprises, the organizations of the size of 100k or higher usually switch to the higher-level abstractions in the organizational structure (introduce subsidiaries, split into relatively autonomous units, etc.) We also could assume that the limit is a soft rather than a hard limit. The bigger the hierarchy, the more waste it generates, but it usually still works somehow. It is also possible to write a very large C program, it is just usually difficult to maintain.
+
+=== Black Boxes (Tier 4)
+The next abstraction tier is the tier of black boxes. The key difference that black box has contact and content. Black-boxes are built upon hierarchies. Originally, hierarchies represent the white box concept, so we understand how the hierarchy works by understanding how sub-nodes work. Now, we replace reference or containment in a hierarchical node not by pointing to a specific element, but by pointing to the contract. So, structure supports any element implementing the contract. And we do not need to know how it is exactly implemented. And structure could support different elements provided that they support the same contract.
+
+The logic enabled by black boxes is a formal logic with quantification, statements about statements, and so on.  Lambda-calculus is also based on abstractions from the tier of the black boxes as well. On this tier, we need to prove conformance of black box to contract and then prove statements about black box using contract.
+
+In programming languages, there were two development lines that belong to this tier. The historically first line are functional languages. The lambda-abstraction is a behavior black box. The functional languages started with white-box structures and black-box behavior. The second development line started with object-oriented languages that offered a more generic black-box construct (objects and interfaces). These black-boxes could manage both: code and data. Eventually, the object-oriented languages have integrated lambda abstractions as a shorthand for one method object (even C++ added them). On the other hand, functional languages started to add more generic black-boxes in the form of type classes, objects, and so on. So, almost all newly created programming languages are either FOOP or OOFP languages.
+
+In an organizational area, the black box abstractions are also often used for complex manufacturing processes. The standardization of elements is a common example, a standard is a contract, and a supplier and consumer limit their consideration to the standard and do not need to understand the processes of each other, and they could still work together. While we take it for granted now, in such a way to organize a separation of labor is quite novel from a historical perspective, the supply chain concept is also belonging to this tier.
+
+=== Order of Adoption
+As it could be seen, these tiers are really ordered and have to be ordered in a specified way. Without objects, we cannot do patterns. This is kind of self-evident as objects are composed of the patterns. The same is for hierarchies, as nodes in the hierarchy are patterns. And this could be extended further, the sub-hierarchies are replaced by black boxes, but before this, a hierarchy has to exist.
+
+If we want to support constructs from some tier in the notation, we need some supporting constructs from the previous tiers as well. This makes the dimension linear as each new tier includes all previous ones.
+
+== Using the Dimension
+When examining notation, we separate it into areas (for example, data and behavior) and will check the highest tier supported construct to get major value on the dimension. For example, LISP will get four (lambdas are supported and data structures could refer to lambdas). C will get 3 as black box structures are not natively supported, and they could be only implemented by escape hatch (pointer to void).
+
+We could also check how the highest tier constructs are organized to introduce a notion of the subdimension. If we consider the evolution of C++ language, we will see the following value on the sub-scale:
+
+* Classes are organized in the flat global namespace (4.2)
+* Classes use hierarchical namespaces (4.3)
+* Generics are supported (4.4 on data and behavior side)
+* Lambdas are supported (improved 4.4 on the behavior side)
+
+This could also an important consideration when evaluating some language. For example, Java and C# initially started as languages at tier 4.3, but they evolved to the stage 4.4 eventually.
+
+== Horizontal Development
+If we consider this dimension as a vertical dimension, the development of the programming languages is not limited to it. The languages are also developed by changing the semantics of abstraction. For example, business rules languages, data manipulation languages, and so on — these languages could be evaluated according to this dimension, but what differentiates them are changes in code execution or changes in the data semantics. So, the semantical changes are not on the same vertical scale, but on a horizontal scale due to changes in the language domain.
+
+For example, at some point in time, the Prolog claimed to be the next generation language. It could be clearly seen that it is not so according to this dimension. Prolog has data structures that support the hierarchical tier, at most. And Prolog code is also organized using hierarchical constructs. So, it is clearly 3rd generation language, the same as C and Pascal. However, the way the code is executed is completely different from one supported by C. So, the Prolog is a logic programming language of generation 3.3 on this scale, while in the different domain. Considering that deduction and induction make sense only starting from 3rd tier constructs, this is actually starting generation of logic programming. The constraint logic programming languages based on Prolog introduced later could be classified as 3.4 languages, as they supported limited forms of contracts, but there still was no generational change in data and code structure.
+
+== Cost of Abstractions
+Abstractions from different tiers have different learning and usage cost. The higher tier abstractions are more taxing to use and more difficult to learn than those of lower tiers. However, these higher-tier abstractions allow decomposing more complex task in manageable pieces. The lower tier abstractions have lower learning and usage cost, but they support lesser complexity. Depending on the situation, these factors could have different weight.
+
+Thus, targeting the highest tier possible is not a sure-win strategy.
+
+One of the good solutions to this trade-off is designing languages that support abstractions from different tiers. For example, Java forces to use class abstraction (tier 4) even for simplest programs. On the other hand, Groovy allows writing programs using a sequence of actions as the script (the tier 2-3 on top level). So, it is possible to choose a high-level abstraction tier suitable of the specific task and not to pay the cost of higher-tier abstractions.
+
+== Evaluating Dimension
+The important question is whether this dimension itself is well-defined. Luckily, Alan F. Blackwell already formulated criteria for evaluating dimensions in the article http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.18.7947[Dealing with New Cognitive Dimensions]. Let’s walk through them.
+
+* *Orthogonality* — the dimension looks like orthogonal to the most of other dimensions. However, there is a connection with the following dimensions:
+* *Abstraction gradient* – the dimension defined in this article should be a specific subdimension of abstraction gradient. However, abstraction gradient dimension is not well-defined in the articles that I have found.
+* *Hard mental operations* – the higher is the abstraction tier, the higher is the intrinsic cognitive load for the specific notation element. So, these two dimensions should correlate.
+* *Granularity* – the dimension is used to evaluate the tier of the specific syntactic elements of the notation, then the notation, as a whole, is also evaluated. Thus, I think it passes on this criterion.
+* *Object of description* – the dimension falls under “structural properties of the information within the notation/device” subcategory listed in the article.
+* *Effect of manipulation* – the manipulation is done by adding and removing notation elements that belong to the specific tier. So, the dimension passes on this criterion as well.
+* *Applicability* – this criterion is quite vaguely described, but I think the dimension passes on this criterion as it could be applied to practically any notation.
+* *Polarity* – the dimension is not polar. There are no intrinsically good or bad tiers. So, the dimension passes on this criterion. The different tiers just allow humans to work with different numbers of elements in the source code. If the number of elements is supposed to be small, the elements from the lower tiers could be beneficial to use in the notation as they are simpler to use or understand. If we are dealing with a large number of elements, the higher tiers provide more powerful complexity management tools, so they should be introduced to the notation.
+
+== Programming Languages Generations
+From the description of abstraction tiers, one could guess the relationship to the programming language generation. From the description, it is obvious that each major generation of the programming languages added constructs from a new tier of the abstractions. So, we have the following generations of computing device languages:
+
+* (Objects) Calculators
+* (Patterns) First programming languages
+* (Hierarchies) Structured programming
+* (Black boxes) Object-oriented and functional programming
+
+Generational changes were not so obvious in the past. The motivation for change from 2nd to 3rd generation is well documented in the famous article “GO TO Considered Harmful” (there is http://david.tribble.com/text/goto.html[an excellent analysis] of this article from the modern perspective by David Tribble). The core argument of the article is that it allows us to make work with programs better since we can decompose our arguments about the program according to the hierarchical structure. While this argument is obvious now, there was a heated discussion at the time of writing that article.
+
+The transition from 3rd to 4th generation is not so well documented. But one could possibly remember writing something like the object-oriented code in C using the following patterns:
+
+* (class) Abstract type pattern where there is a group of operation that either return pointer to structure or take that pointer as first arguments. This pattern is a common standard in C libraries.
+* (interface, lambda) The combination of void pointer and pointer to the function passed to the other function. The function will be later called with void pointer and call a specific argument. Almost all UI libraries used this pattern, and some IO libraries used this pattern as well.
+
+The interesting aspect is that the languages are often compiled using intermediate language belonging to the previous generation. The compiler “clang” compiles C code to LLVM (2nd tier language). GCC uses own internal intermediate language. The lambdas in functional languages (4th tier) are compiled to function pointers and pointers to structures (3rd tier) using http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.86[closure conversion]. First C++ compilers https://en.wikipedia.org/wiki/Cfront[compiled to C first].
+
+== Relationship to Developmental Psychology
+
+This dimension is closely related to how people handle complexity not only in the area of software development but in all other areas. The specified tiers are closely related to https://en.wikipedia.org/wiki/Piaget%27s_theory_of_cognitive_development[corresponding stages] discovered by J. Piaget in developmental psychology.
+
+|===
+| Tier | Stage
+
+| 1. Object | Sensorimotor stage
+| 2. Patterns | Preoperational stage
+| 3. Hierarchies | Concrete operational stage
+| 4. Black boxes | Formal operational stage
+|===
+
+Firstly, J. Piaget has discovered that children can use more and more complex mental operations with their development. Then, other researchers have discovered that these operation tiers are adopted in each area independently. When we learn some domain area, we start with the simplest abstractions types and adopt more and more complex ones. On the example of the programming language development, it could be seen that that humanity also discovers more and more complex abstractions in the sequence. The modern version of this development model is https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[the Model of Hierarchical Complexity] by M.L. Commons.
+
+This works in another way, too. When introducing the new concepts, it is good to introduce basic terminology first (objects), then to provide examples of usages for introduced concepts (patterns), and only then to discuss logic related to these concepts. For example, for object-oriented programming, there are the following stages in teaching materials:
+
+* (objects) Basic discussions of the class concept (usually using cats, docs, etc.)
+* (patterns) https://en.wikipedia.org/wiki/Software_design_pattern[Design patterns] (transduction, design by analogy)
+* (hierarchies) https://en.wikipedia.org/wiki/SOLID[SOLID] (This belongs to the tier of hierarchies since these rules involve simple classifications and constraint that involve deduction and induction over classes)
+
+The programming language textbooks also often walk through this way — starting with values and keywords, continuing with examples of programs, and finally discussing underlying syntax and semantic rules based on the examples.
+
+== Conclusion
+
+Designing a library or DSL could be tricky and one of the critical aspects is the desired abstraction tier. This is particularly critical for DSL where we have to balance learning and the use of lower tiers with flexibility that higher-level abstractions bring to the table. However, when adding constructs from later tiers to the languages, it makes sense to provide a good support lower-level abstraction tier as well, so people will be able to stick to abstraction tier most suitable for the task.
+
+There is https://en.wikipedia.org/wiki/No_Silver_Bullet[no silver bullet] indeed, but each new abstraction tier adds the ammunition of a larger caliber. While it is more bulky and difficult to use, on the other hand, we could create applications with higher and higher behavior complexity, while keeping code base manageable. However, each abstraction tier has its own applicability limits. With any programming language, we eventually will create applications that are too complex to handle with constructs of the specific abstraction tier. And this is motivation for advancing further, discovering further tiers, and reaching limits again.

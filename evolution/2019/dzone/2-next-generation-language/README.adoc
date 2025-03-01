@@ -1,0 +1,133 @@
+= A New Generation of Programming Languages (Part 2)
+:toc:
+:toclevels: 3
+:author: Konstantin Plotnikov
+:docdate: 2019-01-19
+
+As it was discussed in link:../1-abstraction-tiers-of-notation/README.adoc[the previous article], the introduction of constructs of each new abstraction tier caused a new generation of programming languages to emerge. This gives us a way to deduct an evolution path for programming languages or DSLs. In this article, we will consider some general-purpose programming languages.
+
+The new general-purpose programming languages now are either object-oriented languages with functional programming elements or functional languages with object-oriented elements. For the last 50 years, there was no new abstraction tier introduction into general-purpose programming languages.
+
+== Evolution Process
+There is a process for new generation introduction:
+
+1. The application behavior complexity goes beyond what can be reasonably supported by abstractions of the previous tier.
+2. The abstractions of the new tier are introduced as design patterns in the previous tier. So, programmers work as a compiler from the new abstraction tier in the mind to the previous abstraction tier in the code.
+3. New external or internal DSLs appear.
+4. New general-purpose languages appear that support these abstractions natively.
+5. The new constructs are retrofitted into existing languages of the previous tier. For example, the https://en.wikipedia.org/wiki/Fortran[FORTRAN] language has gone through the retrofitting process twice. Structured programming support was introduced in the FORTRAN 77; object-oriented programming support was introduced in FORTRAN 2003.
+
+So, guessing from this process, we could extrapolate it to a new generation of general-purpose of the programming languages as well.
+
+== Next Abstraction Tier
+
+The key question here is: what is the next abstraction tier? To understand it, let’s go back to developmental psychology. As was described in link:../1-abstraction-tiers-of-notation/README.adoc[the previous article], J. Piaget has discovered the first four abstraction tiers described in the previous article.
+
+Later, M.L. Commons has discovered additional abstraction tiers and described them in the https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[Model of Hierarchical Complexity]. For this article, we will discuss only the next tier that corresponds to the systematic and meta-systematic stage of M.L. Commons. I’ve personally had some doubts on his description of the next stages in that article, and we have not yet reached limits of the usability of systematic tier yet.
+
+If we select the core concept of the new tier, this is a concept of the system. The system is not an object described in isolation; it is a set of linked objects and the environment that embeds them. The system behavior generally could not be reduced to arbitrary-ordered behavior of the objects, as the system imposes additional restrictions on the interaction between objects.
+
+== Criteria for New Generation
+
+Based on the two previous sections, we could formulate criteria for the next generation of programming languages:
+
+1. The next generation of languages will be focused on systems. A system will be a new category of the type objects that could be instantiated.
+2. The system type will use classes as building blocks and organize additional structures over them. There will be system behaviors that could be only fully understood while examining the system as a whole.
+3. The current generation of the programming languages will not support the system tier cleanly. It will be supported as internal or external domain-specific language or as a design pattern.
+4. The system pattern will be domain-independent.
+5. The more complex (counted by the number of classes) an application is, the more likely such DSL or design pattern will appear. Such DSL should not be just syntax sugar (more on this criterion at http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.51.4656[this] and http://fexpr.blogspot.com/2013/12/abstractive-power.html[this] article).
+
+== The Appearance of a New Generation
+
+These criteria give us a way to detect this system pattern in the current generation of technologies. The object-oriented languages obviously do not support it natively as there is no native system abstraction in them. For example, packages in Java are just a collection of classes, but this does not create any system behavior by itself.
+
+The theory predicts that we should see the system-like components where it hurts most. The more complex application is, the more likely the system-like objects will appear. Also, it should appear in domain-specific languages for complex domains.
+
+=== General-Purpose Area
+For a general-purpose area, we could really see such a pattern in the form of dependency injection frameworks. This answer was quite surprising to me, as I have initially expected something more exotic as the candidate for the next generation programming languages.
+
+But let’s look to the criteria again:
+
+1. The next generation language will be focused on the systems. A system will be a new category of the type objects that could be instantiated.
+* [*] The context in Spring Framework is a description of the system, and it could be instantiated.
+2. The system type will non-arbitrary use classes as components. There will be system behaviors that could be only fully understood while examining the system as a whole.
+* [*] The context consists of the component descriptions (with different lifetime and scopes). There are links between class instance descriptions. The startup and shutdown operations over them are non-arbitrary ordered and use dependencies.
+3. The current generation of the programming languages will not support system tier cleanly. It will be supported as internal or external domain-specific language or as a design pattern.
+* [*] The Spring Framework uses internal and external DSLs to describe systems.
+4. The language will be domain independent.
+* [*] This is also checked. The Spring Framework is used for a number of business domains.
+5. The more complex (counted by the number of classes) an application is, the more likely such DSL or design pattern will appear. Such DSL should not be just syntax sugar (more on this criterion at http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.51.4656[this] and http://fexpr.blogspot.com/2013/12/abstractive-power.html[this] article).
+* [*] It is hard to find a complex application without any form of dependency injection framework. The applications either use standard ones (Spring, Dagger, Guice) or invent own ones.
+* [*] Also, this DSL is not just syntax sugar. The Spring Framework does quite complex processing to detect environment requirements for components and startup/shutdown order for the components.
+
+=== UI Frameworks
+As we could recall the history, the UI libraries played the key role in the transition from the structured programming to the object-oriented programming. UI libraries were usually the first to be created when C++ was implemented on the environment with UI. As the complexity of UI grows, we could expect that the pattern will be applied there as well.
+
+For example, AngularJS is a modern UI framework, and we could see some system aspects there as well. Firstly, it contains a basic dependency injection framework where components have a global scope. In addition to it, the directive is also a system-like component. Differently, from basic services, there may be multiple instances of the directives, and they could be created with different parameters. If we ignore HTML-specific markup, we have a quite interesting system description language there.
+
+== Path of Evolution
+As we could remember from the previous article, object-oriented languages did not reach the current state on day one. There was a long evolution process. We could expect the same to happen for system-oriented programming. The concept will be iteratively refined, using more complex ways to connect the system together. Based on the evolution of the object-oriented languages, we could guess the development directions for system-oriented programming as well.
+
+=== First Step: Components (5.1)
+The component frameworks like EJB 2.0 and earlier could be considered as the first implementation of system concept with a single component. There is a separation between component and environment, but there is a limited liking between components as components have to discover other components using provided discovery service (in case of EJB 2.0 – JNDI). So, these component frameworks could be considered trivial systems.
+
+https://en.wikipedia.org/wiki/Aspect-oriented_programming[Aspect-Oriented Programming] and https://en.wikipedia.org/wiki/Subject-oriented_programming[Subject-Oriented Programming] could be considered as the first attempts of separation between environment and component. So, they could be also classified as an early effort belonging to this tier.
+
+=== Current Position: Flat Systems (5.2)
+The current state of the popular dependency injection framework could be classified as tier 5.2. There are the following characteristics that make it belong to this tier. I’m basing this conclusion on Dagger, OSGi, and the Spring Framework. There could be other dependency injection frameworks that do not have such a restriction, but I have not seen them.
+
+* There is a global namespace for components in the system.
+* Other systems could be referenced only as included/imported, and each other system could be included only once when inclusion parameters could not be specified. The context import is like “GO SUB” in BASIC. It is an unconditional transfer of control where the invoked point has to use global variables for processing.
+
+As we could remember from link:../1-abstraction-tiers-of-notation/README.adoc[the previous article], such flatness is characteristic of sub-tier 2.
+
+=== Within Reach: Hierarchical Systems (5.3)
+I have not found dependency injection frameworks that correspond to this tier. Such a framework should have the following characteristics:
+
+* The system could have local, parameter, and output components.
+* System definition and system instantiation will be cleanly separated.
+* Systems could be organized in a hierarchy. The system could be present in hierarchy several times, at different tiers, with different input parameters, and output parameters of the system could be used as input to other systems.
+* Subsystems could contribute to parent system components (like Eclipse’s extension points, or OSGi reference lists).
+* There will be options for conditional, mapping, and other ways of instantiating components.
+
+There might be the following optional features:
+
+* _Asynchronous component creation_. The larger systems are expected to happen with the support of hierarchical systems, so there will be a need for asynchronous component creation. Many Spring applications already have a problem with long startup times caused by too many components.
+* _Static typing_. On this stage, the first attempt to static typing of the systems could be made. This would also allow standardization of reusable system definitions.
+
+There are some efforts in this direction, like the acyclic graph of configurations in the Spring Framework, but these efforts do not fully support recursive hierarchical structures.
+
+There are examples of hierarchical system construction, but they belong to domain-specific languages. For example, AngularJS uses it for directives. AngularJS directive is a system with input/output parameters; it could be reused several times with different parameters and it could be even used recursively.
+
+This stage is relatively easy to reach, even some backward compatibility could be maintained for XML-based languages. For internal DSLs like Java-based configuration in the Spring Framework, maintaining backward compatibility would be much harder. On the other hand, non-context-aware components will be unlikely affected.
+
+=== On the Horizon: System Contracts (5.4)
+This stage will be more difficult to reach, as some research on type systems for systems is required here. The language of this sub-tier will likely have the following properties:
+
+* There will be contracts for the system. The system might refer to another system by contract or by concrete system implementation.
+* It will be possible to instantiate system parameterized by other system definition and types.
+* There will be shorthand notation for system creation or contract implementation.
+
+It is not clear now what system contract might be. On one hand, contracts that specify inputs and outputs of the system are trivial, and they could be implemented as a first step. More interesting is support for typing environment properties (like transaction support), multiple class instance constraints, or component auto-discovery features. For example, the https://www.oracle.com/technetwork/java/javaee/index-138715.html[Java Connector Specification] specifies the relationship between classes in English, but the connector archive itself is an incomplete system that is completed by the connector runtime.
+
+I have not seen any effort in this area yet.
+
+=== Beyond the Horizon: Adaptive Systems (5.5)
+This substage is supposed to be the peak point of this new general-purpose programming language generation. The sub-tier 5.5 is more foggy than the other because we really have not learned the lessons of previous sub-tiers yet. Theoretically, this sub-tier should feature some dynamic adaptation and system creation, depending on changing conditions and failures. So, there will be not only feedback loops that could change individual components, but system structure could change as a result of feedback too. Considering that we got subsystems as elements on the previous sub-tiers, this could lead to really interesting scenarios. While it is sometimes done in the software already, it is hardcoded for the specific scenarios; there is no language support for this. Such support could improve reasoning about such kinds of logic.
+
+An example of the pattern that possibly belongs to this sub-tier is https://en.wikipedia.org/wiki/Fault_tolerance[graceful degradation] when under a high load or in the face of service failures the application starts doing less, but the application is still doing something useful. The high load and very large applications will likely be a driving force during this substage. So, they could be mined for design patterns in order to understand this substage better.
+
+If we talk about specific technologies, then https://en.wikipedia.org/wiki/Autonomic_computing[Autonomic Computing] seems to be an attempt in this direction. Currently, this technology is using external DSLs, but it might be more feasible if integrated dependency injection technologies that will allow injecting data gathering and reactions (like switching the service implementation depending on conditions). Based on publications, the effort has somewhat stagnated (even some links on https://www-01.ibm.com/software/info/topic/autonomic.html[IBM site] are dead), but possibly that it has started too early, and it was possibly too ambitious to go even beyond the substage 5.5.
+
+I’m not ready to write down a list of features for this sub-tier, and I would like to stop here for now.
+
+== Name of Generation
+While there is a slightly confusing similarity to “https://en.wikipedia.org/wiki/System_programming[system programming],” I think that the best name for the new generation is a *System-Oriented Programming*. The core element of the new generation is a system, so it should be reflected in the name.
+
+== Type Theory
+I have not found consideration of the system in the type theory. It is clearly a new category of the type object (in addition to primitives, pointers, structs, and classes), so there should be some new ways for reasoning related to it. There is a need for a formal definition of component, environment, and their interactions. The https://en.wikipedia.org/wiki/Category_theory[Category theory] is possibly the closest thing to describing a concept system behavior. For example, there are some parallels between https://blog.scalac.io/exploring-tagless-final.html[Tagless Final] and the context startup and shutdown in the Spring Framework. I think that this is a new and challenging area for research, and I hope to see interesting papers on this in the coming years.
+
+== Conclusion
+The predictions about the evolution of general-purpose programming languages are not easy. Even this text is more like an outline of the research program rather than 100 percent guaranteed prediction. If we look back, basic ideas of modern object-oriented languages could be dated back to https://en.wikipedia.org/wiki/Lisp_(programming_language)[LISP] (1958) and https://en.wikipedia.org/wiki/Simula[Simula] (1965). Since then, the programming-language community has done multiple usability improvements and implementation optimizations. However, the fundamental abstractions used by general-purpose languages have not advanced much since that time.
+
+However, we are possibly witnessing an emergence of a new programming paradigm in the least expected place. But at hindsight, this place looks very natural. The enterprise is the place where developers have to implement systems with complex overall behavior, and new business requirements create unlimited behavior complexity pressure. Such complexity pressure is not easy to reproduce in ivory towers through controlled experiments. And new paradigms appear not out of thin air but as a response to complexity pressures. Humans have only so many ways to handle the complexity pressure. Adoption of abstraction tiers in the area is one of the possible ways, and it looks like such adoption is happening now in the area of programming languages.
