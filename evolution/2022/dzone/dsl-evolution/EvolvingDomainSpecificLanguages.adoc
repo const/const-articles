@@ -299,11 +299,11 @@ state fork_state <<fork>>
 idle --> fork_state : doorClosed
 fork_state --> waitingForLight
 fork_state --> waitingForDraw
-fork_state --> waitingForCurtain
+fork_state -[#green,bold]-> waitingForCurtain #GreenYellow
 state join_state <<join>>
 waitingForLight --> join_state : lightOn
 waitingForDraw --> join_state : drawOpened
-waitingForCurtain --> join_state : curtainClosed
+waitingForCurtain -[#green,bold]-> join_state : curtainClosed
 state unlockedPanel : lockDoor unlockPanel
 join_state --> unlockedPanel
 unlockedPanel --> idle : panelClosed

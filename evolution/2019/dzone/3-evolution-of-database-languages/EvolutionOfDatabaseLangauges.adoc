@@ -4,7 +4,7 @@
 :author: Konstantin Plotnikov user avatar Konstantin Plotnikov · Jan. 25, 19 · Opinion
 :docdate: 2019-01-25
 
-The article “link:../1-abstraction-tiers-of-notation/README.adoc[Abstraction Tiers of Notations, Part 1]” introduced abstraction tier concept, and in the article “link:../2-next-generation-language/README.adoc[New Generation of Programming Languages? Part 2]” I have tried to apply it to the evolution of the general-purpose programming languages. However, this framework is applicable to domain-specific languages as well. Let’s consider one of the most popular domains, where DSLs are widely used: data manipulation languages.
+The article “link:../1-abstraction-tiers-of-notation/AbstractionTiersOfNotation.adoc[Abstraction Tiers of Notations, Part 1]” introduced abstraction tier concept, and in the article “link:../2-next-generation-language/NextGenerationLanguage.adoc[New Generation of Programming Languages? Part 2]” I have tried to apply it to the evolution of the general-purpose programming languages. However, this framework is applicable to domain-specific languages as well. Let’s consider one of the most popular domains, where DSLs are widely used: data manipulation languages.
 
 == Current State
 

@@ -2,7 +2,9 @@
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-.idea/
+.idea/**
+.gigaide/**
+.openide/**
 *.iml
 
 ### Eclipse ###

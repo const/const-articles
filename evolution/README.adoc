@@ -8,10 +8,13 @@ This section contains articles about language and system evolution.
 These articles are quite early ideas on the topic from 2019. Some ideas like sublevels are obsolete.
 
 * 2019
-** link:2019/dzone/1-abstraction-tiers-of-notation/README.adoc[Abstraction Tiers of Notations (Part 1)]
-** link:2019/dzone/2-next-generation-language/README.adoc[A New Generation of Programming Languages (Part 2)]
-** link:2019/dzone/3-evolution-of-database-languages/README.adoc[Evolution of Database Languages (Part 3)]
+** link:2019/dzone/1-abstraction-tiers-of-notation/AbstractionTiersOfNotation.adoc[Abstraction Tiers of Notations (Part 1)]
+** link:2019/dzone/2-next-generation-language/NextGenerationLanguage.adoc[A New Generation of Programming Languages (Part 2)]
+** link:2019/dzone/3-evolution-of-database-languages/EvolutionOfDatabaseLangauges.adoc[Evolution of Database Languages (Part 3)]
 * 2022
-** link:2022/dzone/dsl-evolution/README.adoc[Evolving Domain-Specific Languages]
+** link:2022/dzone/dsl-evolution/EvolvingDomainSpecificLanguages.adoc[Evolving Domain-Specific Languages]
+* 2025
+** link:2025/01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages]
+** link:2025/02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations]
 
 

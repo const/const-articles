@@ -4,7 +4,7 @@
 :author: Konstantin Plotnikov
 :docdate: 2019-01-19
 
-As it was discussed in link:../1-abstraction-tiers-of-notation/README.adoc[the previous article], the introduction of constructs of each new abstraction tier caused a new generation of programming languages to emerge. This gives us a way to deduct an evolution path for programming languages or DSLs. In this article, we will consider some general-purpose programming languages.
+As it was discussed in link:../1-abstraction-tiers-of-notation/AbstractionTiersOfNotation.adoc[the previous article], the introduction of constructs of each new abstraction tier caused a new generation of programming languages to emerge. This gives us a way to deduct an evolution path for programming languages or DSLs. In this article, we will consider some general-purpose programming languages.
 
 The new general-purpose programming languages now are either object-oriented languages with functional programming elements or functional languages with object-oriented elements. For the last 50 years, there was no new abstraction tier introduction into general-purpose programming languages.
 
@@ -21,7 +21,7 @@ So, guessing from this process, we could extrapolate it to a new generation of g
 
 == Next Abstraction Tier
 
-The key question here is: what is the next abstraction tier? To understand it, let’s go back to developmental psychology. As was described in link:../1-abstraction-tiers-of-notation/README.adoc[the previous article], J. Piaget has discovered the first four abstraction tiers described in the previous article.
+The key question here is: what is the next abstraction tier? To understand it, let’s go back to developmental psychology. As was described in link:../1-abstraction-tiers-of-notation/AbstractionTiersOfNotation.adoc[the previous article], J. Piaget has discovered the first four abstraction tiers described in the previous article.
 
 Later, M.L. Commons has discovered additional abstraction tiers and described them in the https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[Model of Hierarchical Complexity]. For this article, we will discuss only the next tier that corresponds to the systematic and meta-systematic stage of M.L. Commons. I’ve personally had some doubts on his description of the next stages in that article, and we have not yet reached limits of the usability of systematic tier yet.
 
@@ -61,7 +61,7 @@ But let’s look to the criteria again:
 * [*] Also, this DSL is not just syntax sugar. The Spring Framework does quite complex processing to detect environment requirements for components and startup/shutdown order for the components.
 
 === UI Frameworks
-As we could recall the history, the UI libraries played the key role in the transition from the structured programming to the object-oriented programming. UI libraries were usually the first to be created when C++ was implemented on the environment with UI. As the complexity of UI grows, we could expect that the pattern will be applied there as well.
+As we could recall the history, the UI libraries played the key role in the transition from the structured programming to the object-oriented programming. UI libraries were usually the first to be created when {cpp} was implemented on the environment with UI. As the complexity of UI grows, we could expect that the pattern will be applied there as well.
 
 For example, AngularJS is a modern UI framework, and we could see some system aspects there as well. Firstly, it contains a basic dependency injection framework where components have a global scope. In addition to it, the directive is also a system-like component. Differently, from basic services, there may be multiple instances of the directives, and they could be created with different parameters. If we ignore HTML-specific markup, we have a quite interesting system description language there.
 
@@ -79,7 +79,7 @@ The current state of the popular dependency injection framework could be classif
 * There is a global namespace for components in the system.
 * Other systems could be referenced only as included/imported, and each other system could be included only once when inclusion parameters could not be specified. The context import is like “GO SUB” in BASIC. It is an unconditional transfer of control where the invoked point has to use global variables for processing.
 
-As we could remember from link:../1-abstraction-tiers-of-notation/README.adoc[the previous article], such flatness is characteristic of sub-tier 2.
+As we could remember from link:../1-abstraction-tiers-of-notation/AbstractionTiersOfNotation.adoc[the previous article], such flatness is characteristic of sub-tier 2.
 
 === Within Reach: Hierarchical Systems (5.3)
 I have not found dependency injection frameworks that correspond to this tier. Such a framework should have the following characteristics:

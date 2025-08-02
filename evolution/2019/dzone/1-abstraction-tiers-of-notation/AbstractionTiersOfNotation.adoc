@@ -48,7 +48,7 @@ The next abstraction tier is the tier of black boxes. The key difference that bl
 
 The logic enabled by black boxes is a formal logic with quantification, statements about statements, and so on.  Lambda-calculus is also based on abstractions from the tier of the black boxes as well. On this tier, we need to prove conformance of black box to contract and then prove statements about black box using contract.
 
-In programming languages, there were two development lines that belong to this tier. The historically first line are functional languages. The lambda-abstraction is a behavior black box. The functional languages started with white-box structures and black-box behavior. The second development line started with object-oriented languages that offered a more generic black-box construct (objects and interfaces). These black-boxes could manage both: code and data. Eventually, the object-oriented languages have integrated lambda abstractions as a shorthand for one method object (even C++ added them). On the other hand, functional languages started to add more generic black-boxes in the form of type classes, objects, and so on. So, almost all newly created programming languages are either FOOP or OOFP languages.
+In programming languages, there were two development lines that belong to this tier. The historically first line are functional languages. The lambda-abstraction is a behavior black box. The functional languages started with white-box structures and black-box behavior. The second development line started with object-oriented languages that offered a more generic black-box construct (objects and interfaces). These black-boxes could manage both: code and data. Eventually, the object-oriented languages have integrated lambda abstractions as a shorthand for one method object (even {cpp} added them). On the other hand, functional languages started to add more generic black-boxes in the form of type classes, objects, and so on. So, almost all newly created programming languages are either FOOP or OOFP languages.
 
 In an organizational area, the black box abstractions are also often used for complex manufacturing processes. The standardization of elements is a common example, a standard is a contract, and a supplier and consumer limit their consideration to the standard and do not need to understand the processes of each other, and they could still work together. While we take it for granted now, in such a way to organize a separation of labor is quite novel from a historical perspective, the supply chain concept is also belonging to this tier.
 
@@ -60,7 +60,7 @@ If we want to support constructs from some tier in the notation, we need some su
 == Using the Dimension
 When examining notation, we separate it into areas (for example, data and behavior) and will check the highest tier supported construct to get major value on the dimension. For example, LISP will get four (lambdas are supported and data structures could refer to lambdas). C will get 3 as black box structures are not natively supported, and they could be only implemented by escape hatch (pointer to void).
 
-We could also check how the highest tier constructs are organized to introduce a notion of the subdimension. If we consider the evolution of C++ language, we will see the following value on the sub-scale:
+We could also check how the highest tier constructs are organized to introduce a notion of the subdimension. If we consider the evolution of {cpp} language, we will see the following value on the sub-scale:
 
 * Classes are organized in the flat global namespace (4.2)
 * Classes use hierarchical namespaces (4.3)
@@ -108,7 +108,7 @@ The transition from 3rd to 4th generation is not so well documented. But one cou
 * (class) Abstract type pattern where there is a group of operation that either return pointer to structure or take that pointer as first arguments. This pattern is a common standard in C libraries.
 * (interface, lambda) The combination of void pointer and pointer to the function passed to the other function. The function will be later called with void pointer and call a specific argument. Almost all UI libraries used this pattern, and some IO libraries used this pattern as well.
 
-The interesting aspect is that the languages are often compiled using intermediate language belonging to the previous generation. The compiler “clang” compiles C code to LLVM (2nd tier language). GCC uses own internal intermediate language. The lambdas in functional languages (4th tier) are compiled to function pointers and pointers to structures (3rd tier) using http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.86[closure conversion]. First C++ compilers https://en.wikipedia.org/wiki/Cfront[compiled to C first].
+The interesting aspect is that the languages are often compiled using intermediate language belonging to the previous generation. The compiler “clang” compiles C code to LLVM (2nd tier language). GCC uses own internal intermediate language. The lambdas in functional languages (4th tier) are compiled to function pointers and pointers to structures (3rd tier) using http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.86[closure conversion]. First {cpp} compilers https://en.wikipedia.org/wiki/Cfront[compiled to C first].
 
 == Relationship to Developmental Psychology
 
