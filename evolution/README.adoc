@@ -16,5 +16,6 @@ These articles are quite early ideas on the topic from 2019. Some ideas like sub
 * 2025
 ** link:2025/01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages]
 ** link:2025/02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations]
+** link:2025/03-Primordial-Soup-Antipattern/Primordial-Soup-Antipattern.adoc[Primordial Soup Antipattern]
 
 
