@@ -218,7 +218,7 @@ public class HelloService {
 
 From Java, it could be created directly using create method:
 
-[source, java]
+[source]
 ----
 var helloService = HelloService.create();
 System.out.println(helloService.greeting("Test"));
