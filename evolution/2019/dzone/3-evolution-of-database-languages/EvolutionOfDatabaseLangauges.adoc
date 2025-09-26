@@ -1,4 +1,5 @@
 = Evolution of Database Languages (Part 3)
+:sectnums:
 :toc:
 :toclevels: 3
 :author: Konstantin Plotnikov user avatar Konstantin Plotnikov · Jan. 25, 19 · Opinion

@@ -1,4 +1,6 @@
 = Evolving Domain-Specific Languages
+:toc:
+:sectnums:
 :author: Konstantin Plotnikov
 :docdate: 2022-05-05
 

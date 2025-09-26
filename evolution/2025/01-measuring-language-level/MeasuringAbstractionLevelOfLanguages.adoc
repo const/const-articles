@@ -1,6 +1,7 @@
 = Measuring Abstraction Level of Programming Languages
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
 :version-label: v0.1.0, 2025-08-02
+:sectnums:
 :toc:
 :toclevels: 3
 

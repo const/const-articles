@@ -1,4 +1,5 @@
 = Abstraction Tiers of Notations (Part 1)
+:sectnums:
 :toc:
 :toclevels: 3
 :author: Konstantin Plotnikov

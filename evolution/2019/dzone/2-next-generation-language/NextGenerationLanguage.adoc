@@ -1,4 +1,5 @@
 = A New Generation of Programming Languages (Part 2)
+:sectnums:
 :toc:
 :toclevels: 3
 :author: Konstantin Plotnikov
