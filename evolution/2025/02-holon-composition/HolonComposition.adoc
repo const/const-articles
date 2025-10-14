@@ -1,56 +1,65 @@
 = Report on Holon/System Composition Operations
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-:version-label: v0.1.0, 2025-08-02
+v0.1.1, 2025-10-12: Corrected spelling and grammar errors and reformatting.
 :sectnums:
 :toc:
 :toclevels: 3
 
-(c) {author}, {version-label}
+By {author}, {revnumber}, {revdate}
 
 
-There are a lot of dependency injection framework. The essential goal of each framework is to define how the system of objects is created. The frameworks that I have examined provide a big number for constructs that allow to define internals of the system, but they provided poor set of operators to compose systems together. In this article, I present a set of constructs that allows to compose systems using richer set of abstractions. These constructs are presented as some hypothetical the level 5 languages (see more details at the article link:../01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages]).
+*Revision History*
+[cols="1,2,6"]
+|===
+| Revision | Date | Comment
 
-This document was developed as part of L5 sample language design process. However, its primary purpose to open a discussion on what features would make sense for holon/system-oriented programming and which new constructs are needed to support it.
+| 0.1.1   | 2025-10-12 | Corrected spelling and grammar errors and reformatting.
+| 0.1.0   | 2025-08-02 | Initial version
+|===
 
-IMPORTANT: The surface syntax and semantics of composition operations are early ideas of what holon-oriented language could be. Readers are encouraged to try inventing own syntax and semantics of composition operations. While I do think that the specified composition operations should present in one form or another, I'm not quite satisfied with the current state of syntax.
+There are many dependency injection frameworks. The essential goal of each framework is to define how the system of objects is created. The frameworks I have examined provide a large number of constructs that allow defining the internals of the system, but they provide a poor set of operators to compose systems together. In this article, I present a set of constructs that allow composing systems using a richer set of abstractions. These constructs are presented as a hypothetical level 5 language (see more details at the article link:../01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages]).
 
-NOTE: The document is a work-in-progress. It could change at any time w/o notice, see git history changes. Also, it might contain inconsistencies because when some ideas are added, some places could miss update.
+This document was developed as part of the L5 PoC language design process. However, its primary purpose is to open a discussion on what features would make sense for holon/system-oriented programming and which new constructs are needed to support it.
+
+IMPORTANT: The surface syntax and semantics of composition operations are early ideas of what a holon-oriented language could be. Readers are encouraged to try inventing their own syntax and semantics of composition operations. While I believe that the specified composition operations should appear in one form or another, I'm not quite satisfied with the current state of the syntax.
+
+NOTE: The document is a work-in-progress. It could change at any time without notice, see the git history changes. Also, it might contain inconsistencies because when some ideas are added, some places could be missed.
 
 == Introduction
 
-In this report, I use the word https://en.wikipedia.org/wiki/Holon_(philosophy)[_holon_] instead of _system_ and _component_. The word 'system' has implication that it consists of something. The word 'component' implies that it a part of something. The word 'holon' means something that is system itself and is component of some other system. So, a holon is a component from the outside perspective, and a system from the inside perspective.
+In this report, I use the word https://en.wikipedia.org/wiki/Holon_(philosophy)[_holon_] instead of _system_ and _component_. The word 'system' has the implication that it consists of something. The word 'component' implies that it is a part of something. The word 'holon' means something that is a system itself and a component of some other system. So, a holon is a component from the outside perspective, and a system from the inside perspective.
 
-One of the most feature-rich frameworks available is the Spring Framework. The set of xml files, component scans, and Java-based configurations is a system definition that is used in runtime to create a system.
+One of the most feature-rich frameworks available is the Spring Framework. The set of XML files, component scans, and Java-based configurations is a system definition used at runtime to create a system.
 
-The system definition language is a level 5 composition operator with respect to objects. The Spring Framework provides a lot of constructs to define internals of the systems. However, it has a poor system composition language. There are basically two and half fundamental system composition operators in the Spring Framework:
+The system definition language is a level 5 composition operator with respect to objects. The Spring Framework provides a lot of constructs to define the internals of systems. However, it has a poor system composition language. There are basically two and a half fundamental system composition operators in the Spring Framework:
 
-1. *import*: The import operation is a concatenation of the systems. The system declared, if it is presents, other system should present as well. This composition operator is a level 2 operator.
-2. *scope*: the scopes allow to define a dependent system that could reference bigger system. For example, there is singleton scope in that defines components one per context. The prototype scope creates components each time it is requested. And the request scope is created for each http request. Beans from request and prototype scopes could reference singleton scope objects. The scope is formally level 4 operator. However, there are major limitations, for example, scopes do not support recursion, and while scope could reference outer system objects, outer system could not reference scope object.
-3. *profiles* and *conditional*: The profile operator allows to define conditional system parts, including conditional system imports. Strictly speaking, this is half-composition operator, since it is more about system internals rather than about composing system together. On per-bean basis, there are conditional beans that are instantiated when some property is set, when needed, or on other conditions.
+1. *import*: The import operation is a concatenation of systems. If a system is declared, the other system must be present as well. This composition operator is a level 2 operator.
+2. *scope*: Scopes allow defining a dependent system that can reference a larger system. For example, the singleton scope defines components that are only one per context. The prototype scope creates components each time they are requested. And the request scope is created for each HTTP request. Beans from request and prototype scopes can reference singleton scope objects. The scope is formally a restricted level 4 operator. However, there are major limitations, for example, scopes do not support recursion, and while a scope can reference outer system objects, the outer system cannot reference scope objects.
+3. *profiles* and *conditional*: The profile operator allows defining conditional system parts, including conditional system imports. Strictly speaking, this is half-composition operator, since it is more about system internals rather than about composing systems together. On a per-bean basis, there are conditional beans that are instantiated when some property is set, when needed, or on other conditions.
 
-So, as a system definition language, the Spring Framework could be classified as the level 2+ language. Also, it is a dynamically-typed language, and this creates a lot of problems for tools like IDE or AOT compilers. Other frameworks, like Dagger 2 provide some static-typing, but they are also essentially a level 2 languages, and they are usually less rich than the Spring Framework in the ways to define system components.
+So, as a system definition language, the Spring Framework's system composition language could be classified as a level 2+ language. Also, it is a dynamically typed language, and this creates many problems for tools like IDEs or AOT compilers. Other frameworks, like Dagger 2, provide some static typing, but they are also essentially level 2 languages from the point of view of system composition, and they are usually less rich than the Spring Framework in the ways of defining system components.
 
-The theory from the article "Measuring Abstraction level of Languages" suggests that the general composition principles should be applicable to the systems as well. And we do really use these composition principles, when we discuss the architecture of the programs. We use notion of systems, sub-system. And sub-systems are non-unique. For example, architecture of microservice could include references to several instances for postgres or kafka configured with different parameters. In contrast, it is difficult to specify in Spring Boot connections two different databases, because import operator does not allow to concatenate one system twice with different parameters.
+The theory from the article link:../01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages] suggests that general composition principles should be applicable to systems as well. And we do use these composition principles when we discuss program architecture. We use notions of systems, subsystems, and subsystems are non-unique. For example, a microservice architecture could include references to several instances of PostgreSQL or Kafka configured with different parameters. In contrast, it is difficult to specify in Spring Boot connections to two different databases, because the import operator does not allow concatenating one system twice with different parameters.
 
-In this report, I'll present possible operators for composing system, and their possible translation to the Java language. The goal is to provide a statically-typed system definition language, that would allow most of widely-used Spring Framework features in a statically-typed way. However, the Spring Framework use many features that rely on dynamic typing, so not all features can be implemented.
+In this report, I'll present possible operators for composing systems, and their possible translation to the Java language (this part is in progress). The goal is to provide a statically typed system/holon definition language that would allow most widely used Spring Framework features in a statically typed way. However, the Spring Framework uses many features that rely on dynamic typing, so not all features can be implemented.
 
 == Base Language Features
 
 === Basic Syntax
 
-The language is modelled more closely after Scala/Kotlin that Java, because such syntax is easier to parse and handle by tools:
+The language is modeled more closely after Scala/Kotlin than Java, because such syntax is easier to parse and handle by tools:
 
-* `var <name> : <type>` notation is used for variables. This is just simpler to parse with context free grammars.
-* array syntax is deoptimized: `a[i] = a[i] + 1` is replaced with `a.set(i, a.get(i) + 1)`, `int[][]` is replaced with `array[array[int]]`, `new int[10][20]` is replaced with `new array[array[int]](10, 20)`. The expression `new int[] {1, 2, 3}` is replaced with `array.of[int](1, 2, 3)`. The loss of shortcut syntax is considered very minor, because arrays are rarely directly used in modern api directly.
-* `[]` are used for generics like in Scala
-* Kotlin/Scala/Groovy-style closures are used `list.stream().map{it.toString()}.join(",")`
-* the modifiers are specified after definition keyword, so `class public final A {}`
-* by default definitions are public, private and package internal should be explicitly specified.
-* type cast `a:![String]`, instanceof `a:?[String]`, pattern matching `a match {case s : String => s; default => "non-string";}`
+* `var <name> : <type>` notation is used for variables. This is simply easier to parse with context-free grammars.
+* Array syntax is deoptimized: `a[i] = a[i] + 1` is replaced with `a.set(i, a.get(i) + 1)`, `int[][]` is replaced with `array[array[int]]`, `new int[10][20]` is replaced with `new array[array[int]](10, 20)`. The expression `new int[] {1, 2, 3}` is replaced with `array.of[int](1, 2, 3)`. The loss of shortcut syntax is considered very minor, because arrays are rarely directly used in modern APIs.
+* `[]` are used for generics like in Scala.
+* Kotlin/Scala/Groovy-style closures are used: `list.stream().map{it.toString()}.join(",")`.
+* Modifiers are specified after the definition keyword, so `class public final A {}`.
+* By default, definitions are public; private and package internal should be explicitly specified.
+* Type cast: `a:![String]`, instanceof: `a:?[String]`, pattern matching: `a match \{case s : String => s; default => "non-string";\}`.
 
-=== Meta specification
+=== Meta Specification
 
-The language has a lot of meta-specifications, so it was decided to include them into special block, rather than to find definition boundary implicitly. If there are metadata attached to definition, `with { ... } as { ... }` construct is used. Otherwise, just block with content is used.
+The language has many meta-specifications, so it was decided to include them in a special block rather than finding the definition boundary implicitly. If there are metadata attached to a definition, the `with { ... } as { ... }` construct is used. Otherwise, just a block with content is used.
 
 [source, java]
 ----
@@ -73,7 +82,7 @@ interface IoAction[T, R] with {
 }
 ----
 
-While such syntax looks a bit cumbersome with simple definitions, it is easier to understand with more complex ones. Also, it allows easier to work with aspects and use some complex expressions in `with` block that are needed for system definition language.
+While such syntax looks a bit cumbersome with simple definitions, it is easier to understand with more complex ones. Also, it allows easier handling of aspects and using complex expressions in the `with` block that are needed for system definition language.
 
 === Aspects
 
@@ -112,9 +121,9 @@ interface IoAction[T, R] with {
 }
 ----
 
-Such refactoring makes sense only if these parts are reused somewhere else. The currently supposed semantics for aspects is apply-and-erase. However, for a completely new languages, it makes sense to directly integrate them into type system.
+Such refactoring makes sense only if these parts are reused elsewhere. The currently supposed semantics for aspects is apply-and-erase. However, for a completely new language, it makes sense to directly integrate them into the type system.
 
-Aspects do not directly support such things as before/after actions. However, there are separate elements as interceptors, that could be applied to methods, like:
+Aspects do not directly support things like before/after actions. However, there are separate elements called interceptors, that could be applied to methods, like:
 
 [source]
 ----
@@ -124,12 +133,12 @@ fn test() with {
     interceptor SyncLogTime (next) with {
         @InterceptorPriority(100);
     } as  {
-        log.debug("Starting method excuction {}", method.getSignature());
+        log.debug("Starting method execution {}", method.getSignature());
         var start = System.nanoTime();
         try {
             return next();
         } finally {
-            log.debug("Finishing method excuction {}, took {}ns",
+            log.debug("Finishing method execution {}, took {}ns",
                 method.getSignature(), System.nanoTime() - start);
         }
     }
@@ -140,9 +149,9 @@ fn test() with {
 
 This could be specified directly in the method, but usually such interceptors will be packaged into some aspect.
 
-Aspects for different definition types do not share the same namespace. There could be `Transactional` aspect for function, class, or field. The aspect with more specific definition type will take a priority. For example, class aspect will win over type aspect, and enum aspect will win over class aspect for enum.
+Aspects for different definition types do not share the same namespace. There could be a `Transactional` aspect for functions, classes, or fields. The aspect with a more specific definition type will take priority. For example, a class aspect will win over a type aspect, and an enum aspect will win over a class aspect for an enum.
 
-Aspects could extend, include, or require other aspects. It is also possible to imply aspects, that along with relationships, for example for content.
+Aspects can extend, include, or require other aspects. It is also possible to imply aspects, along with relationships, for example for content.
 
 [source]
 ----
@@ -168,28 +177,28 @@ aspect JsonObject for class with {
 }
 ----
 
-For this example, if we mark a class with aspect `JsonObject`, all fields will be marked with `JsonProperty` without arguments, unless they are already marked with aspect `JsonIgnore`, `JsonProperty`, or other aspect that implies `JsonField`. They also could not be marked with `JsonIgnore` and `JsonProperty` at the same type, because they include the same aspect.
+For this example, if we mark a class with aspect `JsonObject`, all fields will be marked with `JsonProperty` without arguments, unless they are already marked with aspect `JsonIgnore`, `JsonProperty`, or another aspect that implies `JsonField`. They also cannot be marked with `JsonIgnore` and `JsonProperty` at the same time, because they include the same aspect.
 
-There is only rough sketch for aspects, and this area is under active development.
-The final goal is to introduce static type checking to aspects and to allow them to be zero-cost abstraction. They are introduced here because they are fundamental mechanism of reuse for system definitions. Without possibility to package definition parts as reusable blocks, the system definition language will not reach usability level of the Spring Framework.
+There is only a rough sketch for aspects, and this area is under active development.
+The final goal is to introduce static type checking to aspects and to allow them to be zero-cost abstractions. They are introduced here because they are a fundamental mechanism of reuse for system definitions. Without the possibility to package definition parts as reusable blocks, the system definition language will not reach the usability level of the Spring Framework.
 
-Aspects are also critical for AOT compilation, because they will allow to eliminate many cases where reflection or compiler extensions would have been needed otherwise.
+Aspects are also critical for AOT compilation, because they will allow eliminating many cases where reflection or compiler extensions would have been needed otherwise.
 
 == Holon Composition
 
-Basing on the language defined above, let's define composition operations. In this paper, I'll assume that all holons are declared explicitly. For practical system implemented over Java language, there should be some mechanism to lift some classes like javax.sql.DataSource to holons.
+Basing on the language defined above, let's define composition operations. In this paper, I'll assume that all holons are declared explicitly. For a practical system implemented over the Java language, there should be some mechanism to lift some classes like `javax.sql.DataSource` to holons.
 
-The primary idea of the language is that the system instance is a connection of objects. So system definition is a graph definition where nodes are marked with classes and configured with properties.
+The primary idea of the language is that a system instance is a connection of objects. So a system definition is a graph definition where nodes are marked with classes and configured with properties.
 
-In such definition, two instances need to connect if they could connect within scope. The name of connection is often irrelevant to the task at hand. The case when objects within scope could connect and could connect in many different way is rare in practice, and often it either means that there is one-to-many or many-to-many relationship or scope is too loosely defined, so components from other logical scope leak into the current scope.
+In such a definition, two instances need to connect if they could connect within scope. The name of the connection is often irrelevant to the task at hand. The case when objects within scope could connect in many different ways is rare in practice, and often it either means that there is a one-to-many or many-to-many relationship, or the scope is too loosely defined, so components from other logical scopes leak into the current scope.
 
-So the language below tries to provide definition of components in the most compact way possible. In this language, I try to find a balance between easy to write, and to be still understandable.
+So the language below tries to provide a definition of components in the most compact way possible. In this language, I try to find a balance between easy to write and still understandable.
 
-This is confirmed by my experience with DI frameworks in statically typed languages. The DI frameworks sometimes require some unique identifier for objects, but that identifier is rarely directly used. Most connections are established by class name, or structured qualifiers. Specific name is used when there is some conflict due to limited scoping rules in almost all current DI frameworks that create a big component pile in the form of the god system.
+This is confirmed by my experience with DI frameworks in statically typed languages. The DI frameworks sometimes require some unique identifier for objects, but that identifier is rarely directly used. Most connections are established by class name or structured qualifiers. A specific name is used when there is a conflict due to limited scoping rules in almost all current DI frameworks that create a big component pile in the form of the "god system".
 
 === Level 1. Isolated
 
-Isolated holons are just components that provide functionality which have no dependencies.
+Isolated holons are just components that provide functionality with no dependencies.
 
 [source]
 ----
@@ -200,7 +209,7 @@ holon class HelloService {
 };
 ----
 
-From base language, holons available as classes with protected constructor and `create` static method that create instance (for non-abstract). The method create is considered as default factory method. There could be additional user defined factory methods defined by user, but they must reference the method `create`.
+From the base language, holons are available as classes with a protected constructor and a `create` static method that creates an instance (for non-abstract). The method `create` is considered the default factory method. There could be additional user-defined factory methods defined by the user, but they must reference the method `create`.
 
 [source, java]
 ----
@@ -216,7 +225,7 @@ public class HelloService {
 }
 ----
 
-From Java, it could be created directly using create method:
+From Java, it could be created directly using the `create` method:
 
 [source]
 ----
@@ -224,7 +233,7 @@ var helloService = HelloService.create();
 System.out.println(helloService.greeting("Test"));
 ----
 
-The holon could be also used with `local` declaration, that is possible as type fields and as local variables in methods. The declaration provides a number of shortcuts, allowing to omit factory methods name in case of `create` factory method, and even variable name, if it matches name of type with first name lowercased. So the following forms are equivalent:
+The holon could also be used with a `local` declaration, which is possible as type fields and as local variables in methods. The declaration provides a number of shortcuts, allowing omitting the factory method name in case of the `create` factory method, and even the variable name if it matches the name of the type with the first letter lowercased. So the following forms are equivalent:
 
 [source]
 ----
@@ -235,9 +244,9 @@ local HelloService.create();
 local HelloService();
 ----
 
-These simplifications reflect the fact that in case of variable names for components, the most common name of component is name of type with lover-cased first letter.
+These simplifications reflect the fact that, in the case of variable names for components, the most common name for a component is the name of the type with the first letter lowercased.
 
-It is possible to write the same component (possibly with different parameters, that will be discussed later), several times in the single context.
+It is possible to write the same component (possibly with different parameters, which will be discussed later) several times in a single context.
 
 [source]
 ----
@@ -245,13 +254,13 @@ local HelloService();
 local HelloService();
 ----
 
-In this case, internal names are generated, but it is not possible to reference components by generated name. They could be referenced only implicitly. However, it is possible explicitly name components so they could be referenced by name again.
+In this case, internal names are generated, but it is not possible to reference components by the generated name. They could be referenced only implicitly. However, it is possible to explicitly name components so they can be referenced by name again.
 
 == Level 2. Dependency Injection
 
-The holons could have parameters. The parameters are of two kinds:
+Holons can have parameters. The parameters are of two kinds:
 
-* Other holons - that could be injected implicitly
+* Other holons - that can be injected implicitly
 * Classes, primitive types, records, and other values that are always injected explicitly.
 
 [source]
@@ -276,7 +285,7 @@ holon class CheckInService {
 }
 ----
 
-The "in" declaration follows the same shortcut rules as "local" declaration. So the following forms are equivalent:
+The "in" declaration follows the same shortcut rules as the "local" declaration. So the following forms are equivalent:
 
 [source]
 ----
@@ -284,14 +293,14 @@ in var templateEngine : TemplateEngine;
 in TemplateEngine;
 ----
 
-If holon is declared using "in" or "local", then it is possible to automatically inject it when using local declaration. The parameters of the holon are considered named parameters, so the name must be specified using `#name` syntax. So the full syntax is the following:
+If a holon is declared using "in" or "local", it is possible to automatically inject it when using a local declaration. The parameters of the holon are considered named parameters, so the name must be specified using `#name` syntax. So the full syntax is:
 
 [source]
 ----
-local var templateEngine : TempateEngine = TemplateEngine.create();
+local var templateEngine : TemplateEngine = TemplateEngine.create();
 local var greetingsService : GreetingsService = GreetingsService.create(
     #template "Hello, %s!",
-    #templateEgine templateEngie
+    #templateEngine templateEngine
 );
 local var checkInService : CheckInService = CheckInService.create(#greetingsService greetingsService);
 
@@ -311,7 +320,7 @@ local CheckInService();
 System.out.println(checkInService.welcomeMessage("Test"));
 ----
 
-The generic operator `<![Type]` allows to reference a single value in the context that corresponds to this type. The operator has the same precedence as `.`, `()`, or other navigational operators. So example could be written as the following:
+The generic operator `<![Type]` allows referencing a single value in the context that corresponds to this type. The operator has the same precedence as `.`, `()`, or other navigational operators. So the example could be written as:
 
 [source]
 ----
@@ -323,27 +332,27 @@ local CheckInService();
 System.out.println(<![CheckInService].welcomeMessage("Test"));
 ----
 
-Sometimes there is need to disambiguate which component should be used, if several candidate components are available.
+Sometimes there is a need to disambiguate which component should be used if several candidate components are available.
 
 [source]
 ----
 local TemplateEngine();
 local var helloService = GreetingsService();
-local var hiServie = GreetingsService(#template "Hi, %s!");
-local CheckInService(); // complile error here
+local var hiService = GreetingsService(#template "Hi, %s!");
+local CheckInService(); // compile error here
 ----
 
-In that case it is not clear which GreetingsService should be used. It is possible to disambiguate it using named parameter or inject operator `<|`. So one of the following two forms could be used:
+In that case, it is not clear which `GreetingsService` should be used. It is possible to disambiguate using named parameters or the inject operator `<|`. So one of the following two forms could be used:
 
 [source]
 ----
-local CheckInSerivce(#greetingsService hiService);
-local CheckInSerivce(<|hiService);
+local CheckInService(#greetingsService hiService);
+local CheckInService(<| hiService);
 ----
 
-Note, component dependencies are searched only in the current lexical context, so it is not possible to fetch dependency from other module, unless it somehow is declared in the context.
+Note, component dependencies are searched only in the current lexical context, so it is not possible to fetch a dependency from another module unless it is somehow declared in the context.
 
-It is also possible to declare that dependency is optional, using Java's Optional type:
+It is also possible to declare that a dependency is optional, using Java's `Optional` type:
 
 [source]
 ----
@@ -357,7 +366,7 @@ holon class CheckInService {
 }
 ----
 
-In that case it is possible to use CheckInService even without `GreetingsService`, the suffix `Optional` is added for optional name generation. The operator `<?[Type]` allows using optional value of that type. If there is more than one value could be theoretically injected, it is an error.
+In that case, it is possible to use `CheckInService` even without `GreetingsService`; the suffix `Optional` is added for optional name generation. The operator `<?[Type]` allows using an optional value of that type. If there is more than one value that could theoretically be injected, it is an error.
 
 [source]
 ----
@@ -372,7 +381,7 @@ holon class CheckInService {
 ----
 
 
-It is possible also to use list dependency that inject all objects available in lexical scope.
+It is also possible to use a list dependency that injects all objects available in the lexical scope.
 
 [source]
 ----
@@ -386,7 +395,7 @@ holon class CheckInService {
 }
 ----
 
-The expression `<*[Type]` injects zero or more elements from context. The result of the expression is a list of elements.
+The expression `<*[Type]` injects zero or more elements from the context. The result of the expression is a list of elements.
 
 [source]
 ----
@@ -400,7 +409,7 @@ holon class CheckInService {
 }
 ----
 
-During list injection, a bigger list is created that is concatenation of List, optionals, or just single declarations. The order of elements is the order they are appearing in the context.
+During the list injection, a larger list is created that is a concatenation of lists, optionals, or just single declarations. The order of elements is the order they appear in the context.
 
 [source]
 ----
@@ -416,9 +425,9 @@ holon class CheckInService {
 }
 ----
 
-There `<*[GreetingsService]` will be a new list which elements will contain input list and the local `GreetingsService` as the last element. If the stream is immediately got, it will be replaced by concatenation of streams.
+There, `<*[GreetingsService]` will be a new list containing the input list and the local `GreetingsService` as the last element. If the stream is immediately used, it will be replaced by a concatenation of streams.
 
-Then in the code below check-in service will print all the messages:
+Then in the code below, the check-in service will print all messages:
 
 [source]
 ----
@@ -431,19 +440,19 @@ local CheckInService();
 System.out.println(checkInService.welcomeMessage("Test"));
 ----
 
-The "local" statements are modifying current lexical environment by adding a holon instance to it. The later "local" statements are linking to the components in the environment.
+The "local" statements modify the current lexical environment by adding a holon instance to it. Later "local" statements are linked to the components in the environment.
 
 == Level 3. Hierarchical Composition
 
-Holons could be composed hierarchically using composite holons, that use in, local, and out declarations as fields.
+Holons can be composed hierarchically using composite holons, which use `in`, `local`, and `out` declarations as fields.
 
-The `out` object behave like `local`, but they are also exposed to the lexical context that contain owner holon. This is done recursively, so quite a lot of object might be exposed if not careful. Multiple exposures are treated like multiple declarations of the object in the local context. Sub-holons are named *holon components* or just *components* later.
+The `out` object behaves like `local`, but it is also exposed to the lexical context that contains the owner holon. This is done recursively, so quite a lot of objects might be exposed if not careful. Multiple exposures are treated like multiple declarations of the object in the local context. Sub-holons are named *holon components* or just *components* later.
 
 [source]
 ----
 enum GreetingType { case FORMAL; case INFORMAL; };
 holon class CheckInServiceFactory {
-    in explicit greetintType : GreetingType = GreetingType.FORMAL;
+    in explicit greetingType : GreetingType = GreetingType.FORMAL;
     in TemplateEngine;
     local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
     out CheckInService();
@@ -459,109 +468,110 @@ Then the following is possible:
 [source]
 ----
 local TemplateEngine();
-local CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
-local LogingProcess();
+local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+local LoginProcess();
 ----
 
-In that case, `LoginProcess` will be injected will be expanded to the following full form:
+In that case, `LoginProcess` will be injected and expanded to the following full form:
 
 [source]
 ----
 local loginProcess : LoginProcess = LoginProcess.create(#checkInService checkInServiceFactory.checkInService);
 ----
 
-In case when a disambiguation needed, the operator `<|` could be used as well.
+In case a disambiguation is needed, the operator `<|` could be used as well.
 
 [source]
 ----
 local TemplateEngine();
-local CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
-local LoginProcess(<| checkInServceFactory.checkInService);
+local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+local LoginProcess(<| checkInServiceFactory.checkInService);
 ----
 
-It is also possible to declare alias using `let` statement:
+It is also possible to declare an alias using a `let` statement:
 
 [source]
 ----
 local TemplateEngine();
-local CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
-local let checkInService = checkInServceFactory.checkInService;
+local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+local let checkInService = checkInServiceFactory.checkInService;
 local LoginProcess(<| checkInService);
 ----
 
-It is possible use `*` modifier the following syntax, to make it possible to use names of `out` holons without prefixing them with factory name. They are available under named derived from type name, rather than name from source holon, in order to detect conflicts earlier. This modifier creates implicit let statements for all out parameters;
+It is possible to use the `*` modifier with the following syntax, to make it possible to use names of `out` holons without prefixing them with the factory name. They are available under a name derived from the type name, rather than the source holon name, to detect conflicts earlier. This modifier creates implicit `let` statements for all `out` parameters.
 
 [source]
 ----
 local TemplateEngine();
-local * CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
+local * CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
 local LoginProcess(<| checkInService);
 ----
 
-It is a compile error, if holon with such name already exists in the lexical context.
+It is a compile error if a holon with such a name already exists in the lexical context.
 
-It is possible to use `default` and `Optional` to ensure that component is available in context.
+It is possible to use `default` and `Optional` to ensure that a component is available in the context.
 
 [source]
 ----
 holon class EnableTemplateEngineIfMissing {
-    in Optional[TemplateEngie];
+    in Optional[TemplateEngine];
     out fn default templateEngine() {
-        out templateEngieOptional.orElseOut<>{
+        out templateEngineOptional.orElseOut<>{
             out TemplateEngine();
         };
     };
 };
 ----
 
-It is also possible to declare component as `in out`, this component is re-exported as `out` component. This is only useful for grouping holons that are passed to other holons as bundle later. It is left for experimentation, and it is a candidate for removal.
+It is also possible to declare a component as `in out`, which re-exports the component as an `out` component. This is only useful for grouping holons that are passed to other holons as a bundle later. It is left for experimentation and is a candidate for removal.
 
-The out component could be specified as locally injected and exported. This is useful for cases when component comes from other scope.
+The `out` component could be specified as locally injected and exported. This is useful for cases when a component comes from another scope.
 
 [source]
 ----
 local TemplateEngine();
-local CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
-out let checkInService : CheckInService = checkInServiceFactory.checkInServcie;
+local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+out let checkInService : CheckInService = checkInServiceFactory.checkInService;
 ----
 
 The shorter forms are:
 
 [source]
 ----
-out let checkInService  = checkInServiceFactory.checkInServcie;
+out let checkInService = checkInServiceFactory.checkInService;
 out <![CheckInService];
 ----
 
+
 === Visibility Scopes
 
-There the following life-time scopes for holon components.
+There are the following lifetime scopes for holon components:
 
-* `compile` - this is compile-time scope. It is used to inject information provide by compiler. Typical case are source code location, method or class meta-information, setters/getters for field, etc.
-* `static` - this is class scope, components in this scope are put into special static holon of the component. They could be accessed by * `instance` - this is default scope in the case of component
-`HolonTypeName::staticHolon`.
-* `invoke` - this scope for function invocations and field access.
-* `async invoke` - this scope for asynchronous function invocations, currently, only `CompletableFuture` is supported.
-* `prototype` - for this scope object is crated each time when it is injected (TODO it will be likely renamed in the future, but I'm still trying to figure out better name)
+* `compile` - this is a compile-time scope. It is used to inject information provided by the compiler. Typical cases are source code location, method or class meta-information, setters/getters for fields, etc.
+* `static` - this is a class scope. Components in this scope are put into a special static holon of the component. They can be accessed by `HolonTypeName::staticHolon`.
+* `instance` - this is the default scope for a component.
+* `invoke` - this scope is for function invocations and field access.
+* `async invoke` - this scope is for asynchronous function invocations, currently only `CompletableFuture` is supported.
+* `prototype` - for this scope, an object is created each time it is injected (TODO: it will likely be renamed in the future, but I'm still trying to figure out a better name).
 
 Additional scopes:
 
-* `explicit` - this scope modifier means that the component is not subject to the automatic dependency injection in the current holon component.
+* `explicit` - this scope modifier means that the component is not subject to automatic dependency injection in the current holon component.
 
-It might look as if "out" components could create a long nested tree of components available in the nested context. However, compilers and linters could impose limits on depth and make compilation or code analysis error out of it. And such tree is a kind of "God Object" antipattern for holons, so it should not happen in realistic programs. Recursive tree also needs to be detected as an error by compiler.
+It might look as if "out" components could create a long nested tree of components available in the nested context. However, compilers and linters could impose limits on depth and make compilation or code analysis error out of it. Such a tree is a kind of "God Object" antipattern for holons, so it should not happen in realistic programs. Recursive trees also need to be detected as an error by the compiler.
 
 === Holon Ordering
 
-Because of interaction with aspects, there is a need to create a reliable order. The following order modifier statements are supported.
+Because of interaction with aspects, there is a need to create a reliable order. The following order modifier statements are supported:
 
-* `before HolonType;` - all definition above should happen before any holon instance of the specified type.
+* `before HolonType;` - all definitions above should happen before any holon instance of the specified type.
 * `after HolonType;` - all definitions below should happen after any holon instance of the specified type.
 
 Within each holon definition, these statements are checked for compatibility after applying all aspects, and it is a compile error if there are contradictions.
 
-These statements will be typically used in the aspects, rather than in holon definitions directly.
+These statements will be typically used in aspects, rather than in holon definitions directly.
 
-=== Holon life-cycle
+=== Holon Life-Cycle
 
 The typical system has three phases:
 
@@ -569,17 +579,17 @@ The typical system has three phases:
 2. Activity
 3. Cleanup
 
-The compile-time and static holons are assumed to live forever after they are initialized. However, instance holons often need cleanup, for example closing database connections or doing other actions. For that purpose there are scopes and scoped holons.
+The compile-time and static holons are assumed to live forever after they are initialized. However, instance holons often need cleanup, for example, closing database connections or doing other actions. For that purpose, there are scopes and scoped holons.
 
-The scoped holons have modifier `scoped`.
+The scoped holons have the modifier `scoped`.
 
-The scoped holons are implementing Java's AutoCloseable interface and provide close() methods.
+The scoped holons implement Java's `AutoCloseable` interface and provide a `close()` method.
 
-During construction, if creation of scoped holon fails, all already created scoped sub-holons are closed. The close method that closes all resources in reverse order is generated for scoped holons. The close method could be implemented explicitly, in that case it should take care of all open resources.
+During construction, if creation of a scoped holon fails, all already created scoped sub-holons are closed. The close method that closes all resources in reverse order is generated for scoped holons. The close method can be implemented explicitly; in that case, it should take care of all open resources.
 
-The close method for holons allows only subclasses of `RuntimeException` or `Error` to be thrown. Other exceptions needs to be wrapped. Multiple close exceptions are added to the first exception.
+The close method for holons allows only subclasses of `RuntimeException` or `Error` to be thrown. Other exceptions need to be wrapped. Multiple close exceptions are added to the first exception.
 
-For wrapping non-holon scoped values, a special scoped holon `Resource` is used, that uses close method for auto-closeable, or allows providing a custom close operation. Note, if `Resource` is used with `null`, there still could be a cleanup method, and this allows creating custom cleanup actions.
+For wrapping non-holon scoped values, a special scoped holon `Resource` is used, which uses the close method for `AutoCloseable`, or allows providing a custom close operation. Note, if `Resource` is used with `null`, there still could be a cleanup method, and this allows creating custom cleanup actions.
 
 [source]
 ----
@@ -594,7 +604,7 @@ holon class scoped Resource[T] {
         return resource;
     }
 
-    fn static of[T](resouce : T, Runnable cleanup) : Resource[T] {
+    fn static of[T](resource : T, Runnable cleanup) : Resource[T] {
         return create(#resource resource, #cleanup cleanup);
     }
 
@@ -602,12 +612,12 @@ holon class scoped Resource[T] {
         return create(#resource null, #cleanup cleanup);
     }
 
-    fn static ofCloseable[T](resouce : T) : Resource[T] with {
+    fn static ofCloseable[T](resource : T) : Resource[T] with {
         type T {extends AutoCloseable;};
     } as {
         return create(#resource resource) #cleanup {
             try {
-                resouce.close();
+                resource.close();
             } catch(e : RuntimeException | Error ) {
                 throw e;
             } catch(e : Exception) {
@@ -635,13 +645,13 @@ holon class scoped Resource[T] {
 ----
 
 
-Not all systems need a cleanup phase, but when it is needed, it is critical. The
+Not all systems need a cleanup phase, but when it is needed, it is critical.
 
-NOTE: currently it is under consideration if holons should be scoped or non-scoped by default. Also, there is still under consideration whether this should be a language feature or a library feature. It is possible to implement it either way.
+NOTE: Currently, it is under consideration whether holons should be scoped or non-scoped by default. Also, it is still under consideration whether this should be a language feature or a library feature. It is possible to implement it either way.
 
 === Negative Dependencies
 
-Sometimes the component or method is incompatible with presence of some component. For example, there might be methods that could not be called in transactional contexts, because they manage transactions themselves. It is possible to specify negative dependency for such methods. It is a compilation error, if the dependency could be satisfied in when method is called or component is created.
+Sometimes a component or method is incompatible with the presence of some component. For example, there might be methods that cannot be called in transactional contexts because they manage transactions themselves. It is possible to specify a negative dependency for such methods. It is a compilation error if the dependency could be satisfied when the method is called or the component is created.
 
 [source]
 ----
@@ -654,7 +664,7 @@ holon class TransactionIncompatibleSample {
 }
 ----
 
-This could be packaged into aspect as well.
+This could be packaged into an aspect as well.
 
 [source]
 ----
@@ -671,21 +681,21 @@ holon class TransactionIncompatibleSample {
 ----
 
 
-This feature is still under evaluation, but it looks like a useful addition to type system, as it provides an additional restriction on the environment. However, it provides only one-level check on the lexical scope, so the restriction might be lost in transitive calls, so it is not completely reliable and should be augmented by some runtime checks.
+This feature is still under evaluation, but it looks like a useful addition to the type system, as it provides an additional restriction on the environment. However, it provides only one-level check on a lexical scope, so the restriction might be lost in transitive calls, so it is not completely reliable and should be augmented by some runtime checks.
 
 === Initialization Order
 
-The holon components are initialized in the specified order. There are separate utility components for asynchronous initializations and there is planned support for `CompletableFuture` dependencies. To ensure correct injection, there are order specification.
+Holon components are initialized in the specified order. There are separate utility components for asynchronous initializations, and there is planned support for `CompletableFuture` dependencies. To ensure correct injection, there are order specifications.
 
-In case of injection, it is a compilation error if holon is available in the context at later time after injection point if explicit injection is not used. For integration with aspects, special `before` and `after` order modifiers are available.
+In case of injection, it is a compilation error if a holon is available in the context at a later time after the injection point if explicit injection is not used. For integration with aspects, special `before` and `after` order modifiers are available.
 
 The order is important for DSLs, so instead of inferred order like in Spring Framework, it is better to specify order directly and check it during compilation time. There are still multiple ways for implicit order using out-functions, lazy components, etc.
 
 == Level 4.
 
-=== Holon methods
+=== Holon Methods
 
-It is possible to specify that holon is a factory for other holon:
+It is possible to specify that a holon is a factory for other holons:
 
 [source]
 ----
@@ -693,7 +703,7 @@ enum GreetingType { case FORMAL; case INFORMAL; };
 holon class CheckInServiceFactory {
     in TemplateEngine;
     out fn checkInService {
-        in explicit greetintType : GreetingType = GreetingType.FORMAL;
+        in explicit greetingType : GreetingType = GreetingType.FORMAL;
         local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
         out CheckInService();
     }
@@ -704,36 +714,37 @@ holon class LoginProcess {
 ----
 
 
-So then it could be used as the following:
+So then it could be used as follows:
 
 [source]
 ----
 local TemplateEngine();
 local CheckInServiceFactory();
-local let checkInSerivce : CheckInService = checkInServiceFactory.checkInService(#greetintType GreetingType.INFORMAL)
+local let checkInService : CheckInService = checkInServiceFactory.checkInService(#greetingType GreetingType.INFORMAL)
 local LoginProcess();
 ----
 
-It is possible to use `*` modifier, for factor as well, and it will expose methods to the local context. The variables for out components could be also named by type name (rather than explicitly);
+It is possible to use the `*` modifier for factories as well, and it will expose methods to the local context. The variables for out components could also be named by type name (rather than explicitly).
 
 [source]
 ----
 local * CheckInServiceFactory();
 
 // all lines below are equivalent
-local val checkInSerivce : CheckInService = checkInServiceFactory.checkInService(#greetintType GreetingType.INFORMAL)
-local val checkInSerivce : CheckInService = checkInService(#greetintType GreetingType.INFORMAL)
-local val checkInSerivce = checkInService(#greetintType GreetingType.INFORMAL)
-local checkInServiceFactory.checkInService(#greetintType GreetingType.INFORMAL)
-local checkInService(#greetintType GreetingType.INFORMAL)
+local val checkInService : CheckInService = checkInServiceFactory.checkInService(#greetingType GreetingType.INFORMAL)
+local val checkInService : CheckInService = checkInService(#greetingType GreetingType.INFORMAL)
+local val checkInService = checkInService(#greetingType GreetingType.INFORMAL)
+local checkInServiceFactory.checkInService(#greetingType GreetingType.INFORMAL)
+local checkInService(#greetingType GreetingType.INFORMAL)
 ----
 
-It is possible to declare method as a `default` method, and it will automatically be used to fill dependencies if they are missing from the current context:
+
+It is possible to declare a method as a `default` method, and it will automatically be used to fill dependencies if they are missing from the current context:
 
 [source]
 ----
 holon class CheckInServiceFactory {
-    in explicit greetintType : GreetingType = GreetingType.FORMAL;
+    in explicit greetingType : GreetingType = GreetingType.FORMAL;
     out fn default checkInService {
         in TemplateEngine;
         local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
@@ -742,30 +753,32 @@ holon class CheckInServiceFactory {
 }
 ----
 
+
 With this, it is possible to write:
 
 [source]
 ----
 local TemplateEngine();
-local CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
+local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
 local LoginProcess();
 ----
 
-And in this case the following like will be implicitly generated, because `CheckInService` is missing the lexical context and it is required by `LoginProcess`:
+And in this case, the following line will be implicitly generated because `CheckInService` is missing from the lexical context and is required by `LoginProcess`:
 
 [source]
 ----
-local var checkInSerivce : CheckInService = checkInServiceFactory.checkInService(#templateEngine templateEgine)
+local var checkInService : CheckInService = checkInServiceFactory.checkInService(#templateEngine templateEngine)
 ----
+
 
 Static out functions could provide alternative create methods.
 
 [source]
 ----
 holon class CheckInServiceFactory {
-    in explicit greetintType : GreetingType = GreetingType.FORMAL;
+    in explicit greetingType : GreetingType = GreetingType.FORMAL;
     out fn static informal() {
-        out CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
+        out CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
     };
     out fn default checkInService {
         in TemplateEngine;
@@ -777,7 +790,8 @@ holon class CheckInServiceFactory {
 local * CheckInServiceFactory.informal();
 ----
 
-The last function type is `in` function. The function declare only in and out parameters in the body, and out parameters declare only type, without implementation.
+
+The last function type is `in` function. The function declares only `in` and `out` parameters in the body, and `out` parameters declare only type without implementation.
 
 [source]
 ----
@@ -787,22 +801,24 @@ holon class LoginProcessFactory {
         in TemplateEngine
         out CheckInService
     };
-    out LoginProces();
+    out LoginProcess();
 };
 ----
 
+
 [source]
 ----
-    local checkInService = checkInServiceProvider(#tempalteEngine templateEngine)
+    local checkInService = checkInServiceProvider(#templateEngine templateEngine)
 ----
 
-Multiple out parameters are supported, in this case an anonymous holon type is generated that holds all out parameters. For single out parameter, it is considered as type of the function.
+
+Multiple `out` parameters are supported; in this case, an anonymous holon type is generated that holds all `out` parameters. For a single `out` parameter, it is considered the type of the function.
 
 This functionality roughly corresponds to scopes in the Spring Framework (like session scope, prototype, or singleton), but it is more explicit and flexible.
 
-=== Holon inheritance and abstract holons
+=== Holon Inheritance and Abstract Holons
 
-The holons do not support inheritance directly. However, holons supports aspects that provide a mixin-style inheritance. So it is still possible to reuse common functionality and traits that provide interface-like multiple inheritance.
+Holons do not support inheritance directly. However, holons support aspects that provide a mixin-style inheritance. So it is still possible to reuse common functionality and traits that provide interface-like multiple inheritance.
 
 [source]
 ----
@@ -816,9 +832,9 @@ aspect AbstractCheckInServiceFactory {
 holon class CheckInServiceFactory with {
     @AbstractCheckInServiceFactory();
 } as {
-    in explicit greetintType : GreetingType = GreetingType.FORMAL;
+    in explicit greetingType : GreetingType = GreetingType.FORMAL;
     out fn static informal() {
-        out CheckInServiceFactory(#greetintType GreetingType.INFORMAL);
+        out CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
     };
     out fn default checkInService {
         in TemplateEngine;
@@ -830,13 +846,14 @@ holon class CheckInServiceFactory with {
 local CheckInServiceFactory.informal();
 ----
 
-Holon extends a specific factory method (usually create). The unresolved `in` parameters of the factory method become in parameters of the extending class.
 
-Abstract function holons could only have `in` and `out` components specified.
+Holons extend a specific factory method (usually `create`). The unresolved `in` parameters of the factory method become `in` parameters of the extending class.
+
+Abstract function holons can only have `in` and `out` components specified.
 
 === Traits
 
-Holons also have interface-like kind of type trait. Traits could declare normal members, out holons, and out functions. The holons with `in` component direction could not be declared in trait.
+Holons also have interface-like kind of type trait. Traits can declare normal members, `out` holons, and `out` functions. Holons with `in` component direction cannot be declared in a trait.
 
 [source]
 ----
@@ -853,7 +870,8 @@ holon class HelloService with {
 }
 ----
 
-For trait, it is possible to specify which Holon implements it by default.
+
+For a trait, it is possible to specify which holon implements it by default.
 
 [source]
 ----
@@ -864,7 +882,8 @@ trait HelloTrait with {
 }
 ----
 
-In this case it will be possible to write:
+
+In this case, it will be possible to write:
 
 [source]
 ----
@@ -878,42 +897,46 @@ And it will expand to:
 local var helloTrait : HelloTrait = HelloService.create();
 ----
 
-Or it is possible to use just to use type cast expression:
+
+Or it is possible to use just a type cast expression:
 
 [source]
 ----
 local HelloService():![HelloTrait];
 ----
 
-If `HelloService` might specify that `HelloTrait` is default, then create method will return that trait.
+
+If `HelloService` specifies that `HelloTrait` is default, then the `create` method will return that trait.
 
 [source]
 ----
-hello class HelloService {
-    implments default HelloTrait;
+class HelloService {
+    implements default HelloTrait;
 } as {
     ...
 }
 ----
 
+
 === Facet
 
-Facets are structural function types for holons. They are actually translated to a trait with a single corresponding out function.
+Facets are structural function types for holons. They are actually translated to a trait with a single corresponding `out` function.
 
 [source]
 ----
 facet {
-    in TemplateService
+    in TemplateEngine
     out GreetingsService
 }
 ----
 
-When parameter is of facet type, of in-function, then it is possible holon closures. Differently from the base language closures, holon closures are prefixed by diamond operator `<>`. They could be used by closure apply syntax as well as infix operator. There is no special meaning for this operator, it is just easy to type and visually noticeable.
+
+When a parameter is of facet type, or an `in` function, it is possible to use holon closures. Differently from the base language closures, holon closures are prefixed by the diamond operator `<>`. They could be used by closure apply syntax as well as an infix operator. There is no special meaning for this operator; it is just easy to type and visually noticeable.
 
 [source]
 ----
 holon class CheckInServiceFactory {
-    in explicit greetintType : GreetingType = GreetingType.FORMAL;
+    in explicit greetingType : GreetingType = GreetingType.FORMAL;
     out fn checkInService {
         in TemplateEngine;
         local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
@@ -926,21 +949,22 @@ holon class LoginProcessFactory {
         in TemplateEngine
         out CheckInService
     }
-    out LoginProces()
+    out LoginProcess()
 }
 
 local TemplateEngine()
 local CheckInServiceFactory()
 
-// exlicit inject
+// explicit inject
 local LoginProcessFactory(<| checkInServiceFactory::checkInService)
 // implicit inject from CheckInServiceFactory
 local LoginProcessFactory()
 // lambda system inject
-local LoginProcessFactory(<>{ // implict in TemplateEngine from type of lambda-holon
+local LoginProcessFactory()<>{
+    // implict in TemplateEngine from type of lambda-holon
     local GreetingsService();
     out CheckInService();
-});
+};
 // lambda apply operator
 local LoginProcessFactory()<>{
     local GreetingsService();
@@ -953,9 +977,10 @@ local LoginProcessFactory() #checkInServiceProvider<>{
 };
 ----
 
+
 === Expression Holons
 
-For lambda holons, it is possible to omit `local` keyword to support DSL. It is also possible to do in holon content, where only definitions are expected. For code blocks, the word local is still mandatory.
+For lambda holons, it is possible to omit the `local` keyword to support DSLs. It is also possible to do in holon content where only definitions are expected. For code blocks, the word `local` is still mandatory.
 
 [source]
 ----
@@ -963,12 +988,12 @@ holon class ItemBar with { @UiComponent; } as {
     in items : DynamicList<Item>
     VerticalPanel()<>{
         Label("Item Test");
-        // `?item;` is a syntax for positional lambda paramter. Also applicable to lambda holons.
+        // `?item;` is a syntax for positional lambda parameter. Also applicable to lambda holons.
         List(#direction HORIZONTAL, items)<>{ ?item;
             VerticalPanel()<>{
                 Label(item.name);
                 When{item.value != null} #then<>{
-                    HorizonalPanel()<>{
+                    HorizontalPanel()<>{
                         When{item.icon != null} #then<>{
                             Icon(item.icon);
                         };
@@ -988,19 +1013,20 @@ VerticalPanel()<>{
 }
 ----
 
-This functionality is mostly intended for Holon-based DSL support like JetPack Compose analogs.
+
+This functionality is mostly intended for holon-based DSL support like JetPack Compose analogs.
 
 === Generics and Reflection
 
-Holons could have generic parameters as well. Generics for holons are reified, so it is possible to know exact type arguments. However, this will complicate some interactions with erased generics in Java, so there might be some risks attached.
+Holons can have generic parameters as well. Generics for holons are reified, so it is possible to know exact type arguments. However, this will complicate some interactions with erased generics in Java, so there might be some risks attached.
 
-Holons will have separate reflection system that is built upon Java reflection and saved generic arguments.
+Holons will have a separate reflection system built upon Java reflection and saved generic arguments.
 
-For this reason, the implicit base aspect for holons will be `l5.lang.HolonBase`. This aspect will provide compiler-implemented function that return holon type and other functionality. There will be also trait Holon for external access of the type information.
+For this reason, the implicit base aspect for holons will be `l5.lang.HolonBase`. This aspect will provide compiler-implemented functions that return holon type and other functionality. There will also be a trait `Holon` for external access to type information.
 
-=== ComponentScan alternatives
+=== ComponentScan Alternatives
 
-One of widely used feature of the Spring Framework is ComponentScan annotation, that allows to add all components starting from some package to the context. The annotation scope is too wide for modular systems. However, something restricted might be introduced like the following:
+One of the widely used features of the Spring Framework is the `ComponentScan` annotation, which allows adding all components starting from some package to the context. The annotation scope is too wide for modular systems. However, something restricted might be introduced like the following:
 
 [source]
 ----
@@ -1046,7 +1072,7 @@ holon class CustomerDaoImpl with {
 }
 
 holon class ContactDaoImpl with  {
-    impelements default ContactDao;
+    implements default ContactDao;
 } as {
     in NamedJdbcTemplate;
     in TransactionManager;
@@ -1055,9 +1081,10 @@ holon class ContactDaoImpl with  {
 }
 ----
 
-The declaration `DaoApi` will add all traits in the same directory as out declaration to the trait with default name.
 
-This declaration `DaoImpl` will add all holons in some compatible order in the same directory as local or out declarations depending on the trait `DaoApi`. The added holons could depend on other holons in the same directory or on 'in' declarations in package holon. So the resulting `DaoApi` and `DaoImpl` will be like the following:
+The declaration `DaoApi` will add all traits in the same directory as `out` declarations to the trait with a default name.
+
+This declaration `DaoImpl` will add all holons in some compatible order in the same directory as `local` or `out` declarations depending on the trait `DaoApi`. The added holons could depend on other holons in the same directory or on `in` declarations in the package holon. So the resulting `DaoApi` and `DaoImpl` will be like the following:
 
 [source]
 ----
@@ -1081,23 +1108,24 @@ holon class DaoImpl with {
 }
 ----
 
-The all checks are done at compile time, so this looks like implementable solution with some minor usability value.
 
-It is not yet clear whether it worth to implement this feature or not. It is useful only for creating large holons, but such holons are close to being god-holons (so they are antipattern instances). The danger of the feature that god-holon will appear in a sneaky way without anyone noticing.
+All checks are done at compile time, so this looks like an implementable solution with some minor usability value.
+
+It is not yet clear whether it's worth implementing this feature or not. It is useful only for creating large holons, but such holons are close to being "god holons" (so they are antipattern instances). The danger of the feature is that a "god holon" might appear in a sneaky way without anyone noticing.
 
 == Level 5. Combinators
 
-Holons are already the level 5 combinators, so with structured holons it is possible to enjoy combining holons together.
+Holons are already level 5 combinators, so with structured holons it is possible to enjoy combining holons together.
 
-== Holon-related functionality
+== Holon-Related Functionality
 
 === Using CompletableFuture
 
-It is currently under consideration whether to support asynchronous holon creation with completable future. It looks possible and useful. Currently, a minimal language support is planed.
+It is currently under consideration whether to support asynchronous holon creation with `CompletableFuture`. It looks possible and useful. Currently, minimal language support is planned.
 
-=== Parallel holon creation
+=== Parallel Holon Creation
 
-The language above assumes simple synchronous holon creation like it is done in most of DI systems currently. However, it is possible to create `Par` holon that creates its content in the parallel threads and close resources in the parallel threads. This holon will be implemented as a library. The usage will be like the following:
+The language above assumes simple synchronous holon creation like it is done in most DI systems currently. However, it is possible to create a `Par` holon that creates its content in parallel threads and closes resources in parallel threads. This holon will be implemented as a library. The usage will be like the following:
 
 [source]
 ----
@@ -1109,11 +1137,11 @@ local Par<>{
 }
 
 ----
-Par will add composite holons `value1` and `value2`, and transitively `value1.holon1`, `value2.holon2`, `value2.holon3` to the context.
+`Par` will add composite holons `value1` and `value2`, and transitively `value1.holon1`, `value2.holon2`, `value2.holon3` to the context.
 
 === Dynamic Holons and Conditions
 
-It is possible to support dynamic holons as well. The dynamic holons will change the state basing on changes in dynamic values they depend on. They are currently supposed to be implemented as a library.
+It is possible to support dynamic holons as well. The dynamic holons will change the state based on changes in dynamic values they depend on. They are currently supposed to be implemented as a library.
 
 [source]
 ----
@@ -1124,7 +1152,7 @@ holon class WorkerProperties {
     out numberOfWorkers : DynamicValue[Integer];
 }
 holon class scoped WorkerManager {
-    in WorkerPropeties;
+    in WorkerProperties;
     local workerDynamicList : DynamicList[Worker] = <![WorkerProperties].numberOfWorkers.repeat <> {
         ?n;
         out Worker(n);
@@ -1132,12 +1160,13 @@ holon class scoped WorkerManager {
 }
 ----
 
-In the example above, `WorkerManager` will regulate amount of workers according to changes to worker managers. If number of workers changes, some workers will be added or disposed. The part `local workerDynamicList : DynamicList[Worker] =` is added for clarity, and it could be partially or completely omitted.
 
-The extension method `DynamicValue[Integer].repeat` will create a dynamic list of workers according to count.
+In the example above, `WorkerManager` will regulate the amount of workers according to changes to worker manager properties. If the number of workers changes, some workers will be added or disposed. The part `local workerDynamicList : DynamicList[Worker] =` is added for clarity and could be partially or completely omitted.
 
-The set of dynamic holons will allow creation of dynamic systems that could dynamically adapt to input or changing configuration.
+The extension method `DynamicValue[Integer].repeat` will create a dynamic list of workers according to the count.
+
+The set of dynamic holons will allow creating dynamic systems that could dynamically adapt to input or changing configuration.
 
 == Conclusion
 
-In this report, I've tried to demonstrate that richer set of operations over holons/systems is possible and implementable. It is not yet clear how these operations will behave in practice over the larger programs. For example, there might be issues with indexing in IDE or compiler performance. However, it is believed that complexity of implementing these operations is lower than complexity of precise type checking in the Spring Framework, because the search space is more partitioned and localized due to higher-level abstractions used. Also, the static typing leaves more space for optimizing AOT and JIT compilers, so we could see smaller stack traces and faster code while not only keeping power the level 5 abstractions, but also providing a richer set of them.
+In this report, I've tried to demonstrate that a richer set of operations over holons/systems is possible and implementable. It is not yet clear how these operations will behave in practice over large programs. For example, there might be issues with indexing in IDEs or compiler performance. However, it is believed that the complexity of implementing these operations is lower than the complexity of precise type checking in the Spring Framework, because the search space is more partitioned and localized due to higher-level abstractions used. Also, the static typing leaves more space for optimizing AOT and JIT compilers, so we could see smaller stack traces and faster code while not only keeping the power of level 5 abstractions, but also providing a richer set of them.

@@ -1,93 +1,93 @@
 = Primordial Soup Antipattern
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-:version-label: v0.1.0, 2025-09-14
+v0.1.0, 2025-10-12: Initial Version
 :toc:
 :sectnums:
 
-(c) {author}, {version-label}
+By {author}, {revnumber}, {revdate}
 
 == Introduction
 
-The Spring Framework is a mature dependency injection framework known for its extensive feature set. It is also possibly the most popular one for Java server-side development, and it is used in a lot of projects. However, it has a problem in the foundation, that is a hard to fix without breaking backward compatibility.
+The Spring Framework is a mature dependency injection framework known for its extensive feature set. It is also likely the most popular one for Java server-side development and is used in many projects. However, it has a fundamental problem that is hard to fix without breaking backward compatibility.
 
-This is an antipattern similar to the "God Object" antipattern in OOP. The systems created by the Spring Framework create components in the same application context. The every component could interact with every other component. This leads to naming conflicts, scalability issues, and reuse problems as the system grow. While the Spring Framework supports modularity, the Spring Framework lacks structural isolation and higher-level composition operators that are needed for truly composable systems.
+This is an antipattern similar to the "God Object" antipattern in OOP. The systems created by the Spring Framework create components in the same application context. Every component can interact with every other component. This leads to naming conflicts, scalability issues, and reuse problems as the system grows. While the Spring Framework supports modularity, it lacks structural isolation and higher-level composition operators that are needed for truly composable systems.
 
-In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations], I named this antipattern "God System", but now I think that it is even more accurate to call it **Primordial Soup**.
+In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations], I named this antipattern "God System," but now I think it is more accurate to call it **Primordial Soup**.
 
-This antipattern is not exclusive to the Spring Framework. The most other dependency injection frameworks also implement this pattern (see also: dependency injection in .NET Core, Guice, and others).
+This antipattern is not exclusive to the Spring Framework. Many other dependency injection frameworks also implement it (see also dependency injection in .NET Core, Guice, and others).
 
-In this article, I'll discuss why this antipattern happened in the Spring Framework, what are existing alternatives, and whether it could be fixed.
+In this article, I'll discuss why this antipattern occurred in the Spring Framework, what existing alternatives exist, and whether it could be fixed.
 
 == Primordial Soup in Biology
 
-https://en.wikipedia.org/wiki/Primordial_soup[Primordial Soup] is a hypothetical prebiotic chemical soup that is thought to have existed on the early Earth. It is believed to have been the source of the first living organisms. The Primordial Soup is a mixture of organic molecules that are thought to have been formed by the action of lightning, ultraviolet radiation, and other natural processes on the early Earth. The Primordial Soup is thought to have been the source of the first living organisms.
+https://en.wikipedia.org/wiki/Primordial_soup[Primordial soup] is a hypothetical prebiotic chemical soup thought to have existed on the early Earth. It is believed to have been the source of the first living organisms. The primordial soup is a mixture of organic molecules thought to have been formed by the action of lightning, ultraviolet radiation, and other natural processes on the early Earth. The primordial soup is thought to have been the source of the first living organisms.
 
-During this evolution phase, chemical reactions happened freely between different components, and the most advanced "life forms" in it were possibly similar to the modern viruses. The next phase was a protocell structures, where there were a boundary that prevented free reactions. These protocell had some control on what comes in and what comes out.
+During this evolutionary phase, chemical reactions occurred freely between different components, and the most advanced "life forms" in it were possibly similar to modern viruses. The next phase was protocell structures, where a boundary prevented free reactions. These protocells had control over what comes in and what comes out.
 
-The first version of Primordial Soup hypothesis is considered a bit obsolete, as there are multiple refinements over it. But the core is the same, there is some big scope were molecules could freely interact.
+The first version of the primordial soup hypothesis is considered somewhat obsolete, as there are multiple refinements to it. However, the core concept remains: there is a large scope where molecules can freely interact.
 
 == Primordial Soup in the Spring Framework
 
-In this context, all components can see each other (scopes will be discussed later at <<scopes>>). Even if a component is considered internal, but is technically public, it still could be injected by some trick and used. The component are mostly injected by type, and it is easy to inject something by common interface that actually belong to some other component.
+In this context, all components can see each other (scopes will be discussed later at <<scopes>>). Even if a component is considered internal while being technically public, it could still be injected by some trick and used. Components are mostly injected by type, and it is easy to inject something by a common interface that is actually implemented by another component as well.
 
-For example, if there are two different authentication systems for different ports and they both use the same generic authentication service interface (but with different configuration), it might be very hard to force them to use a correct one, if these reusable components are developed independently by different teams and happen to meet in the same application for the first time in their life. This is not a problem in small systems, but it becomes problematic in large systems where any component can potentially inject another component via a compatible interface.
+For example, if there are two different authentication systems for different ports and they both use the same generic authentication service interface (but with different configuration), it might be very hard to force them to use the correct one if these reusable components are developed independently by different teams and happen to meet in the same application for the first time. This is not a problem in small systems but becomes problematic in large systems where any component can potentially inject another component via a compatible interface.
 
-To make the situation more complicated, even if there is no explicit dependency injection, there are an interface ApplicationContextAware and the method getBean(). While this is a discouraged pattern, this is a necessary feature to work around of tricky situations, and it is used in framework-type code quite often. Therefore, there could be even more hidden dependencies beyond those created by type-based dependency injection.
+To make the situation more complicated, even if there is no explicit dependency injection, there is the interface ApplicationContextAware and the method getBean(). While this is a discouraged pattern, it is a necessary feature to work around tricky situations and is used in framework-type code quite often. Therefore, there could be even more hidden dependencies beyond those created by type-based dependency injection.
 
-The different configuration and xml files actually do not decompose the system into smaller chunks, they are definition groups, not a visibility scope. They could be considered as spots of different colors in the Primordial Soup.
+The different configuration and XML files do not decompose the system into smaller chunks; they are definition groups, not a visibility scope. They could be considered spots of different colors in the Primordial Soup.
 
-A lot of nice Spring Framework functionality depends on the Primordial Soup state, and this could be not easily changed without breaking everything.
+Much of the Spring Framework's functionality depends on the Primordial Soup state and could not be easily changed without breaking everything.
 
 [#scopes]
 == Scopes in the Spring Framework
 
-The scopes in the Spring Framework is an attempt to solve the Primordial Soup problem at least in some areas.
+The scopes in the Spring Framework are an attempt to solve the Primordial Soup problem in some areas.
 
-Basically, a scope in the spring framework creates a virtual context that have all access to the parent context, but it might also instantiate beans private to the own context. It creates dynamic gulfs in the Primordial Soup that could interact with main body, but not other gulfs.
+Basically, a scope in the Spring Framework creates a virtual context that has full access to the parent context but might also instantiate beans private to its own context. It creates dynamic temporary gulfs in the Primordial Soup that can interact with the main body but not with other gulfs.
 
-Scopes primarily address instance lifecycle and isolation, rather than structural visibility and modularity. They manage different lifecycles within the same global visibility context, but do not create truly isolated, interacting modules.
+Scopes primarily address instance lifecycle and isolation rather than structural visibility and modularity. They manage different lifecycles within the same global visibility context but do not create truly isolated, interacting modules.
 
 == Why this is an antipattern?
 
 This causes several problems in the Spring Framework:
 
-* The first obvious problem is that components must be named, and the name of component must be unique. This causes occasional conflicts when two different independent frameworks choose some nice name like "ConfigurationManager" and clash over it. Basically, when implementing a starter, the naming should be done very careful even for internal components. The names should include framework name in order not to clash.
+* The first obvious problem is that components must be named, and the name of a component must be unique. This causes occasional conflicts when two different independent frameworks choose a nice name like "ConfigurationManager" and clash over it. When implementing a starter, naming must be done carefully even for internal components. Names should include the framework name to avoid clashes.
 
-* This also allows Spring Boot to easily define a first resource of some kind (DataSource, Kafka, etc.), but to use a second one, a some portion of Spring Boot must be reimplemented with different bean names. If a component is already present in the system, the second component should be distinguishable when added.
+* This also allows Spring Boot to easily define the first resource of some kind (DataSource, Kafka, etc.), but to use a second one, some portion of Spring Boot must be reimplemented with different bean names. If a component is already present in the system, the second component must be distinguishable when added.
 
-* The pattern "Customizer" is the Spring Framework also is problematic. For example RestTemplateCustomizer applies to all rest templates that support customizers. A special efforts needs to be done to apply only some to the specific RestTemplate.
+* The 'Customizer' pattern in the Spring Framework is also problematic. For example, `RestTemplateCustomizer` applies to all `RestTemplate` instances that support customizers. Special effort is needed to apply it only to a specific `RestTemplate`.
 
-There are more of the problems of this kind that have common theme that there are too many possible interactions, and there is no way to limit them because we have a Primordial Soup.
+There are more problems of this kind that share a common theme: there are too many possible interactions, and there is no way to limit them because we have a Primordial Soup.
 
 == Source of Primordial Soup Antipattern in the Spring Framework
 
-Let's now consider forces that lead to this situation.
+Let's now consider the forces that led to this situation.
 
 The Spring Framework began with relatively small systems, initially designed for web applications. It still includes components that support older-style component wiring using JNDI from Java EE.
 
-In these small systems, there is little need for reuse, as the code could be copy-pasted, and humans could still remember different parts. This is a stage when the Spring Framework feels good and easy.
+In these small systems, there was little need for reuse, as code could be copy-pasted, and humans could still remember different parts. This is a stage when the Spring Framework feels easy to use.
 
-However, systems has grown, and common components are being developed. Also, the approach that greatly simplifies adding additional components was developed in the form of Spring Boot. In Spring Boot application there could be thousands components that come from standard Spring Boot starters, or common starters developed by team or as part of company platform. In the most cases, to use an additional component one needs to just add a starter, update `application.yml` to include some configuration, and inject some interface into application-specific component. This is the stage when the Spring Framework still great and support explosive growth of the application.
+However, as systems grow and common components are developed, the approach that greatly simplifies adding additional components was developed in the form of Spring Boot. In Spring Boot applications, thousands of components can come from standard Spring Boot starters or common starters developed by teams or as part of a company platform. In most cases, to use an additional component, one needs to add a starter, update `application.yml` to include some configuration, and inject an interface into an application-specific component. This is the stage when the Spring Framework still feels great and supports explosive growth of the application.
 
-The idea of Spring Boot is that the most applications connect to only a single instance of the specific resource. And Spring Boot creates a very simple way to use that single instance. So there is to problem if put all these components into the common pull and allow them to interact. Each component would find all that it needs in this common pool. Or it will not, and we will get a cryptic runtime error.
+The idea of Spring Boot is that most applications connect to only a single instance of a specific resource type. Spring Boot creates a very simple way to use that single instance. So, there is no problem if all these components are put into the common pool and allowed to interact. Each component would find all it needs in this common pool, or it will not, resulting in a cryptic runtime error.
 
-Many applications meet these expectations, but things gets more complex very quickly when business want to integrate system together, or architects want to introduce mandatory common services and common reusable components to support interaction with these services.
+Many applications meet these expectations, but things become more complex quickly when businesses want to integrate systems together or architects want to introduce mandatory common services and common reusable components to support interaction with these services.
 
-For example, there could be plenty kafka topics the application is connected to: multiple topics with domain objects, audit, billing, logging, tracing, dynamic configuration, and so on. There could be plenty of outgoing REST connections even for single microservice (for example, if the microservice is implements orchestration for some process). Even multiple JDBC data sources could be needed if some domain is moved to own database to offload the main database.
+For example, an application might connect to numerous Kafka topics: multiple topics with domain objects, audit, billing, logging, tracing, dynamic configuration, and so on. There could be many outgoing REST connections even for a single microservice (for example, if the microservice implements orchestration for some process). Multiple JDBC data sources might also be needed if some domain is moved to its own database to offload the main database.
 
-In addition to the problem of non-finding some component because of some tricky condition, we also start facing a problem of finding the wrong component.
+In addition to the problem of not finding some component due to a tricky condition, we also start facing the problem of finding the wrong component.
 
-These problems could be worked around if encountered, by selectively disabling auto-configurations, defining own configurations, and sometimes even by class substitution or copying code. So problem is often non-fatal, but efforts spent to solve it could have been invested elsewhere.
+These problems can be worked around if encountered by selectively disabling auto-configurations, defining custom configurations, and sometimes even by class substitution or copying code. So the problem is often non-fatal, but the efforts spent to solve it could have been invested elsewhere.
 
-So, we are in the situation where application has grown to the point when there are too many possible interactions, than need to be managed. The Primordial Soup antipattern creates O(N*N) possible interactions between components. Most of these interactions are excluded by types, but with the application growth we have situation when the components of the same type but different purpose gets ino the single application, and these components start to interact in unexpected way.
+We are now in a situation where the application has grown to the point where there are too many possible interactions that need management. The Primordial Soup antipattern creates O(N*N) possible interactions between components. Most of these interactions are excluded by types, but as the application grows, components of the same type but different purpose enter the same application, and these components start interacting in unexpected ways.
 
 == Other Approaches
 
-While the most other dependency injections frameworks implement this antipattern as well, there are few exceptions that I know.
+While most other dependency injection frameworks implement this antipattern, there are a few exceptions I know of.
 
 === Blueprint in the OSGi Framework
 
-The Blueprint Framework from the OSGi framework that is currently used by Eclipse as a foundation for plugins (and considerations here apply to the previous Eclipse plugin framework to a big extent). Some IDEs like IntelliJ IDEA use a similar plugin architectures, but with fewer features. Component framework OSGi framework solves some problems and inherits some most useful features from the Spring Framework, it still has fewer features.
+One interesting (but partial) approach is the Blueprint Framework from the OSGi Framework, which is currently used by Eclipse as a foundation for plugins (and considerations here apply to the previous Eclipse plugin framework to a large extent). Some IDEs like IntelliJ IDEA use a similar plugin architecture but with fewer features. The OSGi Blueprint Framework solves some problems and inherits some useful features from the Spring Framework but has fewer features.
 
 The component definition file in the OSGi Framework looks like the following:
 
@@ -123,19 +123,19 @@ The component definition file in the OSGi Framework looks like the following:
 </blueprint>
 ----
 
-In this file, the reference declaration declares a reference to an external service. The reference is used in the bean definition to inject the external service into the consumer bean. The service declaration exposes a service to service registry. So while there are interactions with service registry is more controlled, it is still a Primordial Soup on the service registry level. But it is much more controlled Primordial Soup than the Spring Framework. The component are put into it explicitly, and taken from it explicitly as well. And there is no way to get a service from the service registry without a reference declaration. Also, there are filtering mechanisms that allow to filter services by properties provided during service declaration.
+In this file, the reference declaration declares a reference to an external service. The reference is used in the bean definition to inject the external service into the consumer bean. The service declaration exposes a service to the service registry. So, while interactions with the service registry are more controlled, it is still a Primordial Soup on the service registry level. But it is a much more controlled Primordial Soup than the Spring Framework. Components are put into it explicitly and taken from it explicitly. There is no way to get a service from the service registry without a reference declaration. Also, there are filtering mechanisms that allow services to be filtered by properties provided during service declaration.
 
-In the biological analogy, OSGi framework reach the level of protocells at least, because there is an environment isolation. It does not reach the level of bacteria, because it suffers bundle-level uniqueness requirements. Bundles are isolated by class loader mechanisms, but they are usually declared as singletons in the OSGi runtime. What happens in blueprint xml file could happen only once in the context of the OSGi runtime.
+In the biological analogy, the OSGi Framework reaches the level of protocells at least because there is environmental isolation. It does not reach the level of bacteria because it suffers from bundle-level uniqueness requirements. Bundles are isolated by class loader mechanisms but are usually declared as singletons in the OSGi runtime. What happens in a Blueprint XML file can occur only once in the context of the OSGi runtime.
 
-Different tricks like could be used to partially overcome this limitation, but we loose usability of the Blueprint Framework in such case because these cases needs to be explicitly handled in the provider code. For example, https://aries.apache.org/documentation/index.html[Apache Aries] project uses it a lot to provide many Java EE services in OSGi Context.
+Different tricks can be used to partially overcome this limitation, but we lose usability of the Blueprint Framework in such cases because these cases need to be explicitly handled in the provider code. For example, the https://aries.apache.org/documentation/index.html[Apache Aries] project uses it extensively to provide many Java EE services in an OSGi context.
 
-The OSGi Framework is often critiqued for high complexity, but this critique is mostly related to the highly dynamic nature of OSGi, rather than to OSGi Blueprint. The most web applications did not need this highly dynamic nature because after startup the application structure is mostly fixed, but they forced to pay for it with increased complexity and non-atomic deployment. Better locality and simplicity of OSGi Blueprint services was not enough to compensate other costs introduced by OSGi. OSGi Blueprint itself was only a half-step into composable systems, so offered some benefits, but not enough of them. Non-atomic deployment was precisely because OSGi Blueprint lacked higher-level system composition operators.
+The OSGi Framework is often critiqued for high complexity, but this critique is mostly related to the highly dynamic nature of OSGi rather than OSGi Blueprint. Most web applications did not need this highly dynamic nature because, after startup, the application structure is mostly fixed, but they are forced to pay for it with increased complexity and non-atomic deployment. Better locality and simplicity of OSGi Blueprint services were not sufficient to compensate for other costs introduced by OSGi. OSGi Blueprint itself was only a half-step toward composable systems, offering some benefits but not enough. Non-atomic deployment occurred precisely because OSGi Blueprint lacked higher-level system composition operators.
 
-Spring Boot with Docker provided atomic deployment solution without that additional cost, and this killed potential development in this area.
+Spring Boot with Docker provided an atomic deployment solution without that additional cost, killing potential development in this area.
 
 === Hierarchical Composition in React, JetPack Compose, and Others
 
-These frameworks do not do dependency injection directly, but they still implement system composition operators:
+These frameworks do not do dependency injection directly but still implement system composition operators:
 
 [source,kotlin]
 ----
@@ -158,40 +158,42 @@ fun BasicInformationalCard(modifier: Modifier = Modifier, borderColor: Color,
 }
 ----
 
-Here, it is possible see hierarchical system composition example, where `Box` is subsystem of `Card`. The card references `content()` system constructor, so it makes `BasicInformationalCard` a system constructor that accepts a lambda system as parameter. In the JetPack Compose framework, this composition pattern is widely used, to create a wide set of reusable and extensible systems of UI components.
+Here, it is possible to see a hierarchical system composition example where `Box` is a subsystem of `Card`. The card references the `content()` system constructor, making `BasicInformationalCard` a system constructor that accepts a lambda system as a parameter. In the JetPack Compose framework, this composition pattern is widely used to create a wide set of reusable and extensible systems of UI components.
 
-This could be compared with Spring Framework, where to create a new similar system of components we could not just create it with some local name. We need to duplicate code and use other likely-unique global names, so it would coexist with original ones and possible future ones. The molecules that float in Primordial Soup need to have globally unique names, but local components in hierarchy do not. They need have names specific to the node, and in UI case a relative position in the list of subcomponents could be used as a kind of name.
+This could be compared with Spring Framework, where to create a new similar system of components, one cannot simply create it with a local name. We need to duplicate code and use other likely-unique global names, so it coexists with original ones and possible future ones. The molecules that float in Primordial Soup need globally unique names, but local components in a hierarchy do not. They need names specific to the node, and in the UI case, a relative position in the list of subcomponents could be used as a kind of name.
 
-The problem with these frameworks is that they are specialized for UI rather than general-purpose and there are no horizontal dependency injection, there is only automatic parent-child relationships. Horizontal interactions are done using explicitly referenced shared mutable state. However, these frameworks still demonstrate that useful language for hierarchical composition is possible at least for the certain domains.
+The problem with these frameworks is that they are specialized for UI rather than general-purpose, and there is no horizontal dependency injection—only automatic parent-child relationships. Horizontal interactions are done using explicitly referenced shared mutable state. However, these frameworks still demonstrate that a useful language for hierarchical composition is possible at least for certain domains.
 
-It could be used as an inspiration for more rich system composition operators. Just imagine that instead of lists and boxes there are repositories, and web servers, data sources, and other components.
+They could be used as inspiration for richer system composition operators. Just imagine that instead of lists and boxes, there are repositories, web servers, data sources, and other components.
 
-In biological evolution analogy, they could be considered specialized multicell organisms. The important thing is that we do not need to name components, and we do not need care about how they are named in the separate component trees, the names are local and often they are implicit.
+In the biological evolution analogy, they could be considered specialized multicellular organisms. The important thing is that we do not need to name components, and we do not need to care about how they are named in separate component trees—the names are local and often implicit.
 
 === Holon Composition Operators
 
-In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations], I proposed a set of composition operators that supports greater locality of definition and allow for more composable systems.
+In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations], I proposed a set of composition operators that support greater locality of definition and allow for more composable systems.
 
-The main idea of the article is introduction of system composition operators that allow to compose larger systems from smaller ones. And the proposed language is statically-typed, so most errors related to the system composition will be detected at compile time, or (with IDE support) during editing source code.
+The main idea is the introduction of system composition operators that allow composing larger systems from smaller ones. The proposed language is statically typed, so most errors related to system composition will be detected at compile time or (with IDE support) during source code editing.
 
-The goal is to support most useful parts of Spring Boot and plugin frameworks like OSGi DS in the statically-typed way as a starting point. The proposed language goes beyond that and introduces hierarchical composition and contract-based composition of the systems (for example, lambda-systems).
+The goal is to support most useful parts of Spring Boot and plugin frameworks like OSGi DS in a statically-typed way as a starting point. The proposed language goes beyond that and introduces hierarchical composition and contract-based composition of systems (for example, lambda-systems).
 
 == Is it possible to fix the Spring Framework?
 
-I do not believe it is possible to fix this without significantly breaking backward compatibility. This will mostly affect system-level components like ConfigurationProperties, AOP, post-processors, and others. These types of components needs to be rewritten almost completely.
+I do not believe it is possible to fix this without significantly breaking backward compatibility. This will mostly affect system-level components like ConfigurationProperties, AOP, post-processors, and others. These types of components need to be rewritten almost completely.
 
-The effect on the components will be quite small, but glue has to be changed and the Spring Framework is mostly about that glue. The next level of components like JDBC DataSource, Transaction, and other connectors will need to be significantly refactored and repackaged into reusable modules. This will be a significant refactoring as well. The components could stay almost the same, but there is a need for a system composition language.
+The effect on components will be quite small, but the glue must be changed, and the Spring Framework is mostly about that glue. The next level of components like JDBC DataSource, Transaction, and other connectors will need to be significantly refactored and repackaged into reusable modules. This will be a significant refactoring as well. The components could stay almost the same, but there is a need for a system composition language.
 
-For xml-based system definition this would be relatively easy, as the extensions like hierarchical systems or lambda-systems are easy to introduce. The React framework could be used as one of inspirations for such language. For Java-based DSL things will be quite challenging, and I currently do not see a clean way to do this.
+For XML-based system definition, this would be relatively easy, as extensions like hierarchical systems or lambda-systems are easy to introduce. The React framework could be used as one of the inspirations for such a language. For Java-based DSL, things will be quite challenging, and I currently do not see a clean way to do this.
 
-It will become particularly complex if we attempt to statically type such a DSL in a reasonable way. There are already a lot of rough edges for Java DSL in the Spring Framework. For example, the `PreAuthorize` annotation would have liked to accept a typed lambda abstraction, but it could only accept a string that contains code. With higher-level constructs the need for such code fragments will likely grow further.
+It will become particularly complex if we attempt to statically type such a DSL in a reasonable way. There are already many rough edges for Java DSL in the Spring Framework. For example, the `PreAuthorize` annotation would have liked to accept a typed lambda abstraction but could only accept a string containing code. With higher-level constructs, the need for such code fragments will likely grow further.
 
-Therefore, the most likely approach will be to introduce a System Definition Language, but such language will be eventually rich enough to be full-blown general-purpose programming language. Such language will provide static typing, system composition operators, and using some basic OOP language as foundation. If such language will use JVM as foundation, it has to fight pre-DI era API, like File IO, Sockets, and so on. A new API layer has to be created to lift these Java API to DI world. All Java language design problems has to be accepted to worked around in such language.
+Therefore, the most likely approach will be to introduce a system definition language. Such a language will eventually be rich enough to be a full-blown general-purpose programming language. It will provide static typing, system composition operators, and use a basic OOP language as a foundation.
 
-The language will likely encounter ABI issues similar to those faced by C++ The higher-level constructs needs to be reduced to the lower level ones. And there will be multiple ways to do it that will evolve over time. The Java dodged {cpp} ABI problem by introducing own object-file format (`.class` files), own library packaging (`.zip` and later `.jar` files), and own linker (`ClassLoader`). A new System Definition Language has to follow Java footsteps if the language does want to have problems similar to {cpp} ABI problems. So, it will have a new file format for system distribution, a new "SystemLoader" that will combine system definition files into result system.
+If such a language uses the JVM as a foundation, it must deal with pre-dependency-injection-era APIs like File I/O, Sockets, and so on. A new API layer must be created to lift these Java APIs to the DI world. All Java language design problems must be accepted and worked around in such a language.
 
-Therefore, the final result will likely be a new general-purpose programming language with a new standard library, and this will be a huge investment in any case. Basing a new language on JVM might be useful during the exploration and research phase, but it would be severely limiting for the future language evolution, and it will be easy to make decisions that would conflict with the future Java language evolution (that is recently quite active). Designing a new language from scratch might be cheaper in the end.
+The language will likely encounter ABI issues similar to those faced by {cpp}. Higher-level constructs need to be reduced to lower-level ones, and there will be multiple ways to do this that evolve over time. Java dodged the {cpp} ABI problem by introducing its own object-file format (`.class` files), its own library packaging (`.zip` and later `.jar` files), and its own linker (`ClassLoader`). A new system definition language would have to follow Java's footsteps to avoid problems similar to the {cpp} ABI problem.
+
+Thus, the final result will likely be a new general-purpose programming language with a new standard library, which will be a huge investment in any case. Basing a new language on the JVM might be useful during exploration and research but would be severely limiting for future language evolution. It would be easy to make decisions conflicting with future Java language evolution (which has been quite active recently). Designing a new language from scratch might be cheaper in the end.
 
 == Conclusion
 
-The Spring Framework was one of the early pioneers in the area, the first tasks they faced were very small. This antipattern becomes more problematic as systems grow. With growth of the system the pattern cause more and more problems. They could be worked around, avoided by some design patterns, and the pain can be tolerated. And the projects could be just refactored even further. However, it does not change the fact that there is a composition problem. While I believe this antipattern cannot be easily fixed in the Spring Framework without a major rewrite, there is no reason to repeat it in new dependency injection frameworks.
+The Spring Framework was one of the early pioneers in the area, and the first tasks it faced were very small. This antipattern becomes more problematic as systems grow. With system growth, the pattern causes more and more problems. They can be worked around, avoided by some design patterns, and the pain can be tolerated. Projects can be refactored further. However, this does not change the fact that there is a composition problem. While I believe this antipattern cannot be easily fixed in the Spring Framework without a major rewrite, there is no reason to repeat it in new dependency injection frameworks.
