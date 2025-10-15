@@ -454,11 +454,19 @@ enum GreetingType { case FORMAL; case INFORMAL; };
 holon class CheckInServiceFactory {
     in explicit greetingType : GreetingType = GreetingType.FORMAL;
     in TemplateEngine;
-    local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
+    local GreetingsService(
+        #template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
     out CheckInService();
 }
 holon class LoginProcess {
     in CheckInService;
+    // ...
+}
+// ...
+holon class LoginSubsystem {
+    in TemplateEngine;
+    local CheckInServiceFactory(#greetingType GreetingType.INFORMAL)
+    out LoginProcess();
 }
 ----
 
