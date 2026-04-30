@@ -8,7 +8,7 @@ By {author}, {revnumber}, {revdate}
 
 NOTE: This is an opinion piece / blog‑style article, not a formal specification. It aims to identify a recurring problem (the “Primordial Soup” antipattern) and provoke discussion – not to provide a complete technical solution. Antipattern here used informally – not as a formally catalogued antipattern.
 
-*TL;DR:* TL;DR: A single global DI context (like Spring’s ApplicationContext) creates naming conflicts, hidden dependencies, and poor reusability – a “primordial soup”. Better isolation (e.g., OSGi) or hierarchical composition (e.g., UI frameworks) avoids this. A new language with native system operators is needed (details in future work).
+*TL;DR:* A single global DI context (like Spring’s ApplicationContext) creates naming conflicts, hidden dependencies, and poor reusability – a “primordial soup”. Better isolation (e.g., OSGi) or hierarchical composition (e.g., UI frameworks) avoids this. A new language with native system operators is needed (details in future work).
 
 == Introduction
 
