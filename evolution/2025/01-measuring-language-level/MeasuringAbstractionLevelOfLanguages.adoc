@@ -1,13 +1,13 @@
 = Measuring Abstraction Level of Programming Languages
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.1, 2025-10-12
+v0.1.2, 2026-04-30
 :sectnums:
 :toc:
 :toclevels: 4
 
 By {author}, {revnumber}, {revdate}
 
-This article presents a semiformal framework for measuring programming language abstraction levels based on connection types, enabling objective comparison of languages and prediction of future language evolution. The measurement scale presented here is numeric, and it is possible to measure the level without comparing with other languages. The framework measures the level of the language, rather than the level of the language with DSLs that might be implementations of higher-level operations.
+This article presents a semiformal, ordinal scale for classifying the abstraction level of programming languages based on their predominant connection types along the growth path. The scale is not a continuous numeric measurement but a structured ranking (Levels 1–4) that relies on expert evaluation of language idioms and scaling mechanisms.
 
 The model presented here could help with the following:
 
@@ -19,6 +19,7 @@ The model presented here could help with the following:
 |===
 | Revision | Date | Comment
 
+| 0.1.2   | 2026-04-30 | Correcting incorrect statements that caused overclaims
 | 0.1.1   | 2025-10-12 a|
 * Many minor fixes to old sections: mostly corrected spelling and grammar errors and reformatting.
 * Added section "Cost of Abstraction" and some appendixes.
@@ -40,13 +41,13 @@ If we consider language levels, there are clear improvements in abstraction leve
 
 Each new group introduces new types of constructs that allow for better scaling of cognitive complexity with the growth of behavioral complexity. This allows creation of more complex applications.
 
-If we try to introduce an absolute scale that measures language level, we would need objective criteria that sort languages approximately in this order. A naive approach would be using "likeness" criteria, classifying languages based on paradigm and assigning numbers depending on the paradigm.
+If we try to introduce a better scale that evaluates language level, we would need more formal criteria that sort languages approximately in this order. A naive approach would be using "likeness" criteria, classifying languages based on paradigm and assigning numbers depending on the paradigm.
 
-However, this approach does not help with non-mainstream paradigms like Logic Programming, and within the Logic Programming paradigm, there could be languages with apparently different abstraction levels (for example, Verse vs. Prolog). Thus, this approach could not be used to classify languages objectively. To classify languages objectively, we need formal (or at least semiformal) criteria rather than intuitive ones.
+However, this approach does not help with non-mainstream paradigms like Logic Programming, and within the Logic Programming paradigm, there could be languages with apparently different abstraction levels (for example, Verse vs. Prolog). Thus, this approach could not be used to classify languages reliably as it is too subjective. To classify languages more formally, we need formal (or at least semiformal) criteria rather than intuitive ones.
 
 It could be noted that general-purpose programming languages describe state and behavior of programs, using different abstractions to combine pieces of description of state and behavior into more complex pieces. So a reasonable approach to language classification might be to consider properties and available language elements and ways to combine these units together.
 
-== Why to Measure?
+== Why to Evaluate?
 
 This is possibly the most critical question. The behavioral complexity of a program usually grows over time due to changes in requirements, understanding of domain, bug fixes, external integrations, and other factors.
 
@@ -64,6 +65,7 @@ The cost of steps 1 and 2 strongly depends on cognitive complexity of the progra
 However, in different programming languages, the cognitive complexity growth curve is different. In my intuition, the growth curve is like the diagram below. I talked with different developers, and most of them have similar intuition about this process.
 
 image::images/diagram1.png[complexity growth diagram]
+.The diagram shows cognitive complexity (y‑axis) vs. behavioral complexity (x‑axis). Lower‑level languages start with lower initial complexity but experience steeper growth. Higher‑level languages have higher entry cost but flatter growth.
 
 There are the following important points about this diagram:
 
@@ -81,7 +83,7 @@ So, a reliable measuring approach of programming languages level will allow us t
 
 * It would allow us to understand which technologies are about the same in complexity growth, so instead of discussing the language we could consider other factors like libraries, platform support, integrations, or team experience. Complexity growth for C#, Go, Java is about the same, but if we need to implement some functionality instead of using some library, this functionality will add to complexity growth.
 
-* It would allow us to predict if some technology is a breakthrough in complexity management area, or it is just the same thing again, and only minor improvements could be expected. There are a lot of technologies that are claiming to be a new generation, but after hype calms down, there is not so much difference from existing ones.
+* It would allow us to explore if some technology is a breakthrough in complexity management area, or it is just the same thing again, and only minor improvements could be expected. There are a lot of technologies that are claiming to be a new generation, but after hype calms down, there is not so much difference from existing ones.
 
 == Necessary Conditions for the Next Level
 
@@ -225,7 +227,7 @@ The flat level provides concepts that are located on a single global level. They
 
 Let's consider a random sample from the web for assembler (https://www.tutorialspoint.com/assembly_programming/assembly_logical_instructions.htm[taken from tutorialspoint.com]):
 
-[source]
+[source, assembler]
 ----
 section .text
    global _start            ;must be declared for using gcc
@@ -269,7 +271,7 @@ NOTE: The sample is copied from source "as is".
 
 Let's consider a simple BASIC program that calculates the 20th prime number:
 
-[source]
+[source,basic]
 ----
 100 DIM P(20)
 110 N = 0
@@ -325,7 +327,7 @@ int factorial(int n) {
 }
 ----
 
-Also, conditional statements use relative links to their components. The conditional statement does not refer to statements by absolute names like labels or line numbers. The statements are organized in blocks, and `if` composes these blocks into a new whole. There could be nested `if` statements. The same is for expressions, which form a tree.
+Also, conditional statements use relative links to their components. The conditional statement does not refer to statements by global names like labels or line numbers. The statements are organized in blocks, and `if` composes these blocks into a new whole. There could be nested `if` statements. The same is for expressions, which form a tree.
 
 This hierarchical composition gives us a new way to reason about the program. We can attach inferences to nodes in the tree. During reasoning, preconditions are pushed from previous and outer nodes in the text, and post-conditions are pushed to outer and next nodes.
 
@@ -470,7 +472,7 @@ Let's check principles of https://en.wikipedia.org/wiki/SOLID[SOLID] from this p
 [quote]
 There should never be more than one reason for a class to change.
 
-This principle states that class should be responsible for one thing. If there are multiple things the class is responsible for, then when reasoning about the class behavior we need to consider interactions of these things. For example, when changing some behavior, we need to consider all responsibilities of the class. Thus, we have multiplicative cost of change in the worst case.
+This principle states that class should be responsible for one thing. If there are multiple things the class is responsible for, then when reasoning about the class behavior we need to consider interactions of these responsibilities. For example, when changing some behavior, we need to consider all responsibilities of the class. Thus, we have multiplicative cost of change in the worst case.
 
 ===== Open–Closed Principle
 
@@ -548,7 +550,7 @@ Therefore, there is no silver bullet indeed. However, the higher level languages
 
 The classification of the languages is more difficult than classification of concepts. The language naturally contains concept from level 1 up to some other level. For example, BASIC (unstructured) control flow is at level 2, and expressions are clearly at level 3.
 
-If we consider cognitive scalability, we need to understand which concepts are on the *growth path* when we try to increase behavior complexity. Concepts on growth path are linked to each other and should grow when behavioral complexity grows:
+If we consider cognitive scalability, we need to understand which concepts are on the *growth path* when we try to increase behavior complexity. By ‘growth path’ we mean the set of language concepts that are added or scaled as program size increases – the abstractions that dominate the program’s structure in large, idiomatic code. Concepts on growth path are linked to each other and should grow when behavioral complexity grows:
 
 [cols="2,1,1,6"]
 |===
@@ -567,7 +569,7 @@ The naive classification could be based on the max level of the concept in the l
 
 The expression language is at level 3, but it does not help with cognitive scaling, because top-level statement language is at level 2, and these the expressions are just level 3 islands in the sea of level 2 statements. However, to grow the behavioral complexity, we need to increase the amount of element in the sea, the size of individual islands stays the same.
 
-This example shows, that we need to consider links on the growth path, rather than all links of the concept. So we need to measure the level of the sea, rather than the level of the islands.
+This example shows, that we need to consider links on the growth path, rather than all links of the concept. So we need to classify the level of the sea, rather than the level of the islands.
 
 [cols="1,3,5,10,5"]
 |===
@@ -676,9 +678,9 @@ There are some common things during transitions:
 
 * Concepts of the previous levels are often restricted, so there are additional conditions on when they could appear. For example, `GO TO` should follow some block structure. Or typed references could not point to arbitrary object in statically-typed languages.
 
-* The concept of the next level are actually used in the languages of the previous level, but they are natively supported. And developers use design patterns, whitespaces, comments, code generators, macros, or other means to support them.
+* The concept of the next level are actually used in the languages of the previous level, but they are not natively supported. And developers use design patterns, whitespaces, comments, code generators, macros, or other means to support them.
 
-* These concepts start to be used, because they really help to fight complexity. So, more the complex domain is, them more likely that concepts will appear. And using these concepts on the previous level is considered as example of a good design.
+* These concepts start to be used, because they really help to fight complexity. So, more the complex domain is, the more likely that concepts will appear. And using these concepts on the previous level is considered as example of a good design.
 
 * These concepts are general-purpose, so they are applied independently of the domain.
 
@@ -694,7 +696,7 @@ Initially, when I started this analysis, I hoped that Language-Oriented Programm
 
 This is because the answer was "dependency injection".
 
-* [*] On the new level the one or more concept are added that organize concepts on the previous level in a non-trivial way. A new kind of type will appear.
+* [*] On the new level, the one or more concept are added that organize concepts on the previous level in a non-trivial way. A new kind of type will appear.
 ** Dependency injection frameworks directly or indirectly introduce concept of system that is composed of objects. System definition, uses classes to specify a system.
 ** System definition is a type, created system is an instance of this type. The system definition in Spring Framework consists of annotations, Java DSL for configuration, xml files, etc. The created system is an instance of some ApplicationContext subclass.
 
@@ -761,7 +763,7 @@ In addition to holons, there is a need for interface like type for holons, and I
 
 A simple leaf DAO component might look like the following.
 
-[source]
+[source,l5]
 ----
 aspect TransactionAware for holon class {
     in TransactionManager;
@@ -791,7 +793,7 @@ The line `in JdbcTemplate;` is shortcut for `in val jdbcTemplate : JdbcTemplate`
 
 The module the provides multiple DAO components might look like the following:
 
-[source]
+[source,l5]
 ----
 holon class ClientDal with {
     @TransactionAware; // propagated to components
@@ -807,7 +809,7 @@ holon class ClientDal with {
 ----
 
 There could be also holon out-functions that allow implementing extension points.
-[source]
+[source,l5]
 ----
 /// some action manager for IDE Action
 holon trait ActionManager {
@@ -899,7 +901,7 @@ A level 5 language will allow us to express these subsystem boundaries naturally
 The transition will resemble the transition from OOP in C to OOP in {cpp}. A lot of implicit constructs, macro-based internal DSLs, and design patterns were replaced by explicit language constructs. This also enabled important optimizations like devirtualization, that are very hard to implement in C, because it is hard for C compiler reverse-engineer OOP semantics from the code.
 
 For example, the following source will type-check:
-[source]
+[source,l5]
 ----
 holon class UserSubsystem {
     in DataSource
@@ -910,7 +912,7 @@ holon class UserSubsystem {
 ----
 
 The following will not:
-[source]
+[source,l5]
 ----
 holon class UserSubsystem {
     local UserDao()
@@ -1006,7 +1008,7 @@ The table below gives a short summary of differences between Java + Spring Frame
 
 | Testability
 | It is difficult to limit which beans will affect the test and select configuration
-| The system dependencies are explicit, and it is to select needed component configuration
+| The system dependencies are explicit, and it is easy to select needed component configuration
 
 | Startup Performance
 | The code needs to be examined and links between components inferred
@@ -1025,9 +1027,9 @@ The table below gives a short summary of differences between Java + Spring Frame
 | Dependency Injection and Lexical Scopes Compile-time checks.
 |===
 
-== Summary of Measuring Procedure
+== Summary of Evaluation Procedure
 
-There are the following major steps in the measuring procedure:
+There are the following major steps in the evaluation procedure:
 
 === Analysis Steps
 ==== Selecting Idiomatic Programs
@@ -1036,7 +1038,7 @@ The goal of this step is identifying the bodies of the code that are idiomatic t
 
 ==== Key Abstraction Identification
 
-The goal of this step is selecting concepts that are on the growth complexity path. Such concepts form the top level of the language. The number of such abstractions increase in number with grows of the complexity, and they are not limited or contained by other abstraction.
+The goal of this step is selecting concepts that are on the growth complexity path. Such concepts form the top level of the language. The number of such abstractions increase in number with growth of the complexity, and they are not limited or contained by other abstraction.
 
 ==== Connection Analysis
 
@@ -1054,7 +1056,7 @@ The last step is checking that reasoning that corresponds to the specific level 
 
 === Issues with Measuring Procedure
 
-There are kinds of trivial containment that does not add structure over contained elements. For example, formally, Java packages contain classes and interfaces. However, the packages are just name prefixes for Java class names, so a composite name could be formed. There still a global flat namespace for classes, and we still reason about individual classes, packages are trivial groups of classes, not providing useful operations over them. Some libraries like Spring Framework allow some package-wide operations, but this is done by interpreters of system definition language that use Java as a substrate language.
+There are kinds of trivial containment that does not add structure over contained elements. For example, formally, Java packages contain classes and interfaces. However, the packages are just name prefixes for Java class names, so a composite name could be formed. There is still a global flat namespace for classes, and we still reason about individual classes, packages are trivial groups of classes, not providing useful operations over them. Some libraries like Spring Framework allow some package-wide operations, but this is done by interpreters of system definition language that use Java as a substrate language.
 
 The step of identifying concepts on the growth path is semiformal and has subjective elements.
 
@@ -1066,11 +1068,23 @@ The step of identifying concepts on the growth path is semiformal and has subjec
 
 After that, we need to examine how concepts on the growth path are connected to each other and what is the level of connections on this growth path. The maximum level of connections on the growth path determines the level of the language. For example in BASIC, The 'LET' statement has expression as its part (level 3) and has link to the next statement (level 2). However, the expression is not on the growth path, but link to the next statement is. So while the concept is at level 3, on the growth path it behaves as level 2.
 
-However, it might happen that there is a mix of different levels on the growth path. If lower level concepts dominate, we could mark the language as intermediate between levels, or just ignore rarely used high-level concepts. For example, formally FORTRAN 66 had procedures, but their implementation were plagued with limitations, and they were rarely used in idiomatic code. When creating a teaching language BASIC at that time, the authors of BASIC even dropped procedures as non-essential element, instead there were `GO SUB` and `RETURN` statements that worked using line numbers and were level 2 concepts.
+However, it might happen that there is a mix of different levels on the growth path. If lower level concepts dominate, we could mark the language as intermediate between levels, or just ignore rarely used high-level concepts. Such intermediate languages might have elements of a higher level that seems to be on growth path, but such features might be underused for one reason or other (for example, it has too many restrictions or does not fit the rest of the language well). For example, formally FORTRAN 66 had procedures, but their implementation were plagued with limitations, and they were rarely used in idiomatic code. When creating a teaching language BASIC at that time, the authors of BASIC even dropped procedures as non-essential element, instead there were `GO SUB` and `RETURN` statements that worked using line numbers and were level 2 concepts.
+
+=== Step Summary
+
+1. *Select idiomatic programs* – Choose large, real‑world codebases that represent typical usage.
+
+2. *Identify key abstractions* – Find which concepts grow in number as program size increases.
+
+3. *Analyze connections* – Determine the level (2,3,4) of links between those abstractions.
+
+4. *Assign level* – The highest connection level on the growth path determines the language’s level.
+
+5. *Validate reasoning* – Check that the expected reasoning style (storytelling, first‑order logic, etc.) is actually used by developers.
 
 == Level 6 and Later
 
-The prediction, that system/holon-oriented programming is the next level of the programming languages might look stretched at the first sight. However, I tried to refute it for many years, and I still have not found anything else to replace it or supersede it as a more generic mechanism. I think that something "language-integrated dependency injection" will eventually sneak into both new and old languages. and there will be finally hope to understand what will be a new level 6. There will be some abstractions that will use holons as lower-level building blocks, and there will be even the better tools to manage complexity of software.
+The proposal that system/holon-oriented programming is the next level of the programming languages might look stretched at the first sight. However, I tried to refute it for many years, and I still have not found anything else to replace it or supersede it as a more generic mechanism. I think that something "language-integrated dependency injection" will eventually sneak into both new and old languages. and there will be finally hope to understand what will be a new level 6. There will be some abstractions that will use holons as lower-level building blocks, and there will be even the better tools to manage complexity of software.
 
 Before that happens a lot of good and bad holon-oriented programs will be written. This is needed to understand what is a good holon-oriented programming. The good holon-oriented programming will contain seeds of level 6. However, these seeds will appear only when we as software developers will encounter complexity challenges where holon-oriented languages will fail to provide adequate complexity management tools.
 
@@ -1105,15 +1119,34 @@ The following future work is planned:
 
 1. The development of a proof-of-concept language that implements key concepts of level 5 is under way. Some key points of the current design are described in the article link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations]. This language is planned as a research tool used to demonstrate the ideas.
 2. There are plans to write articles on the applicability of abstraction levels to the Operating Systems. These domains are quite close to the general-purpose programming languages as they provide abstractions that describe state and behavior, and these abstractions are connected together to form aggregate behavior of the systems. There are multiple challenges related to cognitive complexity in these domains that could be examined from the point of view presented in this article.
-3. There are also plan to write articles that discuss applicability of the abstraction measurements scale to the complexity challenges related to DSLs with focus on BPMN and context-free grammars.
+3. There are also plan to write articles that discuss applicability of the abstraction classification scale to the complexity challenges related to DSLs with focus on BPMN and context-free grammars.
 
 == Conclusion
 
-In this article, I've tried to demonstrate that the abstraction levels of programming languages could be measured by semiformal process. The measured level is more detailed than "high" and "low". The measuring process has subjective elements, but I believe that some local consensus could be reached on these subjective elements.
+In this article, I've tried to demonstrate that the abstraction levels of programming languages could be classified by semiformal process. The resulting level is more detailed than "high" and "low". The measuring process has subjective elements, but I believe that some local consensus could be reached on these subjective elements.
 
-This framework can provide valuable lens for understanding language evolution. By focusing on connection types rather than paradigms, we can objectively identify when a language truly represents a new level of abstraction. The key insight is that each new level reduces cognitive complexity growth by adding a new way to reason about programs without needing to consider all details at once.
+This framework can provide valuable lens for understanding language evolution. By focusing on connection types rather than paradigms, we can semi-formally identify when a language truly represents a new level of abstraction. The key insight is that each new level reduces cognitive complexity growth by adding a new way to reason about programs without needing to consider all details at once.
+
+Caveats on using the scale:
+
+* A language’s abstraction level does not guarantee reduced cognitive load for every task. For state‑iterative problems (e.g., web servers, databases), a Level 4 pure functional language may require more mental translation steps than a Level 4 imperative language like Go. Task‑language fit matters as well.
+
+* Abstraction features reduce cognitive complexity only when used correctly. For example, for level 4, violations of SOLID principles (fat interfaces, substitutability failures, etc.) can turn black‑box abstraction into a source of accidental complexity. The framework assumes expert, idiomatic usage along the growth path.
 
 The transition to level 5 (holon-oriented programming) will be significant, but it must be implemented as a core language feature rather than an external framework to provide the full benefits of reduced cognitive complexity.
+
+== Glossary
+
+Abbreviations used:
+
+* AOP – Aspect‑Oriented Programming
+* DI – Dependency Injection
+* DSL – Domain‑Specific Language
+* FP – Functional Programming
+* HOP – Holon‑Oriented Programming
+* LOP – Language‑Oriented Programming
+* OOP – Object‑Oriented Programming
+* SOP – System‑Oriented Programming.
 
 [appendix]
 == Connection to Developmental Psychology
@@ -1213,7 +1246,7 @@ I'm quite skeptical about dynamically-typed languages, and I think that they cou
 
 On larger or longer projects, additional costs of dynamic typing will outweigh savings from trying to figure out correct types and writing type annotations.
 
-In the dynamically-typed languages, a referrer knows almost nothing about a referenced entity, the operations to the entity features are done without knowledge of the actual contract. So it is a partial regress to level 2 where we had opaque indexes in memory and operations over them. On the other hand there are either implicit type case statement or virtual functions, so it is still corresponds to level 3 or level 4. This information is not in the code and the information needs to be kept in the mind of the programmer, to determine if an operation could succeed or fail.
+In the dynamically-typed languages, a referrer knows almost nothing about a referenced entity, the operations to the entity features are done without knowledge of the actual contract. So it is a partial regress to level 2 where we had opaque indexes in memory and operations over them. On the other hand there are either implicit type case statement or virtual functions, so it is still corresponds to level 3 or level 4. This information is not in the code and the information needs to be kept in the mind of the programmer to determine if an operation could succeed or fail.
 
 If this information is forgotten or lost (because of personnel transfer, firing, or other reason), a global program analysis could be required to recover it. Even IDEs have trouble with recovering such information and use different heuristics to infer it.
 

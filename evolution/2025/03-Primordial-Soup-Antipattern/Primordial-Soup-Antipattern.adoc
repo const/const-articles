@@ -1,10 +1,14 @@
 = Primordial Soup Antipattern
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.0, 2025-10-12: Initial Version
+v0.1.1, 2026-04-30: Minor improvement
 :toc:
 :sectnums:
 
 By {author}, {revnumber}, {revdate}
+
+NOTE: This is an opinion piece / blog‑style article, not a formal specification. It aims to identify a recurring problem (the “Primordial Soup” antipattern) and provoke discussion – not to provide a complete technical solution. Antipattern here used informally – not as a formally catalogued antipattern.
+
+*TL;DR:* TL;DR: A single global DI context (like Spring’s ApplicationContext) creates naming conflicts, hidden dependencies, and poor reusability – a “primordial soup”. Better isolation (e.g., OSGi) or hierarchical composition (e.g., UI frameworks) avoids this. A new language with native system operators is needed (details in future work).
 
 == Introduction
 
@@ -17,6 +21,14 @@ In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holo
 This antipattern is not exclusive to the Spring Framework. Many other dependency injection frameworks also implement it (see also dependency injection in .NET Core, Guice, and others).
 
 In this article, I'll discuss why this antipattern occurred in the Spring Framework, what existing alternatives exist, and whether it could be fixed.
+
+What article is not:
+
+* *Not a systematic literature review* – examples are based on author’s experience.
+
+* *Not a complete solution* – the proposed language is described elsewhere.
+
+* *Not a criticism of Spring’s overall value* – Spring is successful; this points to a specific design trade‑off.
 
 == Primordial Soup in Biology
 
@@ -157,6 +169,7 @@ fun BasicInformationalCard(modifier: Modifier = Modifier, borderColor: Color,
     }
 }
 ----
+The code snippet is taken from https://github.com/android/compose-samples/blob/main/JetLagged/app/src/main/java/com/example/jetlagged/HomeScreenCards.kt[Android sample code].
 
 Here, it is possible to see a hierarchical system composition example where `Box` is a subsystem of `Card`. The card references the `content()` system constructor, making `BasicInformationalCard` a system constructor that accepts a lambda system as a parameter. In the JetPack Compose framework, this composition pattern is widely used to create a wide set of reusable and extensible systems of UI components.
 
@@ -197,3 +210,11 @@ Thus, the final result will likely be a new general-purpose programming language
 == Conclusion
 
 The Spring Framework was one of the early pioneers in the area, and the first tasks it faced were very small. This antipattern becomes more problematic as systems grow. With system growth, the pattern causes more and more problems. They can be worked around, avoided by some design patterns, and the pain can be tolerated. Projects can be refactored further. However, this does not change the fact that there is a composition problem. While I believe this antipattern cannot be easily fixed in the Spring Framework without a major rewrite, there is no reason to repeat it in new dependency injection frameworks.
+
+== Further reading / related work
+
+* link:../01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages]
+* link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations]
+* Spring Documentation:
+** https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html[Bean Scopes]
+** https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/autowired-qualifiers.html[Fine-tuning Annotation-based Autowiring with Qualifiers]
