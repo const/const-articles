@@ -1,6 +1,6 @@
 = Measuring Abstraction Level of Programming Languages
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.2, 2026-04-30
+v0.1.3, 2026-05-02
 :sectnums:
 :toc:
 :toclevels: 4
@@ -11,14 +11,17 @@ This article presents a semiformal, ordinal scale for classifying the abstractio
 
 The model presented here could help with the following:
 
-* It provides a framework for evaluating existing technologies and better predicting their impact on the software development process.
+* It outlines a framework for evaluating existing technologies and better predicting their impact on the software development process.
 * It could help with language design, so it is easier to choose the right abstraction level and to add features that would mitigate complexity management problems earlier.
+
+This is the first article in the series, and its primary goal is to introduce the idea and outline its applicability for analysis of programming languages and other domains. The primary goal is to provide a lens for discussion rather than a formal executable methodology. The followup articles will explore this idea further.
 
 *Revision History*
 [cols="1,2,6"]
 |===
 | Revision | Date | Comment
 
+| 0.1.3   | 2026-05-02 | Clarified reasoning cost topology, integrated practical diagnostics, refined Level 5 framing
 | 0.1.2   | 2026-04-30 | Correcting incorrect statements that caused overclaims
 | 0.1.1   | 2025-10-12 a|
 * Many minor fixes to old sections: mostly corrected spelling and grammar errors and reformatting.
@@ -431,9 +434,11 @@ void log(Printable p) {
 }
 ----
 
-In C, the reasoning cost about union is `O( (amount of referrers) * (amount of referred cases))`, because we need to consider all cases in all places where we need specific values. In Java, the reasoning code is `O( ( (amount of referrers) + (amount of referred cases) ) * (used contract size) )`, because we need to reason for referrer up to interface, and for referrer from interface. With code changes, it is the same. If we need to add a case to union, in C we potentially need to visit all sites where union is used. For Java, we need to just add class and implement all methods in the interface, and the catch is that if interface is violating Single Responsibility Principle, the cost might be quite high.
+In C, reasoning about a tagged union scales like `(amount of referrers) * (amount of referred cases)`, because every extraction site must account for all possible variants. In Java, reasoning cost scales like `( (amount of referrers) + (amount of referred cases) ) * (used contract size)`, because the reasoning graph is partitioned: callers reason only up to the interface boundary, and implementers reason from it. Since reasoning cost dominates overall cognitive load, the difference between these approaches stems primarily from reasoning topology rather than syntax or learning overhead.
 
-NOTE: Functional Programming makes single method objects very convenient to use. The single method object is the second-simplest contract possible. And the big portion of the power of Functional Programming is derived from the fact that in formula `O( ( (amount of referrers) + (amount of referred cases) ) * (used contract size) )` the component `(used contract size)` is very small.
+This structural advantage holds for modifications as well. Adding a new variant in C may require visiting every referrer site. In Java, it only requires adding a new class that implements the interface. The caveat is that if the interface violates the Single Responsibility Principle, the `(used contract size)` factor grows, which quickly erodes the partitioning benefit.
+
+NOTE: Functional Programming makes single-method objects exceptionally convenient. A single-method object is the second-simplest contract possible, and much of FP's practical power derives from the fact that when cognitive cost scales like `( (amount of referrers) + (amount of referred cases) ) * (used contract size)`, the `(used contract size)` component is kept minimal.
 
 This happens because we include a type into reasoning steps. Considering that https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence[a type corresponds to a formula] in the logic, and we use formula as parameter to another formula, this promotes our reasoning logic to the higher-order logic.
 
@@ -591,6 +596,9 @@ This example shows, that we need to consider links on the growth path, rather th
 | Higher-order logic
 |===
 
+Some modern languages deliberately blend levels for pragmatic reasons. Go restricts Level 4 features (restricted inheritance, limited generics initially) to keep it readable, accepting higher boilerplate for predictable scaling. However, Go has enough level 4 features still to be classified as a level 4 language.
+
+NOTE: A language's abstraction level defines the *ceiling* of cognitive scalability for idiomatic usage, not a mandatory coding style. You can write level 3 procedural code in a level 4 language like Java, but attempting to reason beyond that ceiling requires emulating higher‑level constructs through frameworks or conventions — which merely shifts the cognitive mapping cost back to the developer. This means: choose a language whose ceiling comfortably exceeds your anticipated complexity, then progressively adopt its native higher‑level constructs *as the growth path demands*.
 
 === Level 1 Language
 
@@ -687,6 +695,8 @@ There are some common things during transitions:
 * The next level language support these concepts directly, making their usage simple and direct.
 
 == Level 5. Holon/System-Oriented Programming
+
+This section demonstrates how the framework can be extrapolated to predict future abstraction levels. It outlines a working hypothesis for Level 5 (Holon/System-Oriented Programming) and is not yet validated by mature language implementations. Concrete syntax and compiler architecture are being developed as research prototypes.
 
 Having established the formal reasoning capabilities of level 4 languages, we now consider what would be required for a level 5 language.
 
@@ -1034,11 +1044,18 @@ There are the following major steps in the evaluation procedure:
 === Analysis Steps
 ==== Selecting Idiomatic Programs
 
-The goal of this step is identifying the bodies of the code that are idiomatic to the language.
+The goal of this step is identifying the bodies of the code that are idiomatic to the language. On this step it supposed to select code that:
+
+* Follow industry guidelines and practices for the good code for this language if there are any.
+* Fairly large for the language. For code base to successfully grow in size, it should implement some good practices that would allow it to grow in size.
+* "Normal" programs for the language should be preferred in contrast to the programs that heavily innovate and explore some new ideas in the program design
+* If project uses internal and external DSLs, the care should be taken to understand what part of the code is being analyzed.
 
 ==== Key Abstraction Identification
 
 The goal of this step is selecting concepts that are on the growth complexity path. Such concepts form the top level of the language. The number of such abstractions increase in number with growth of the complexity, and they are not limited or contained by other abstraction.
+
+A language only advances to a new level when the compiler or runtime absorbs the cognitive mapping cost of that connection type. Features that require developer discipline to emulate (e.g., manual virtual tables, convention-based dependency injection, explicit state passing) remain DSL-emulated: they appear in code but don't reduce mental overhead, so the growth path stalls at the previous level.
 
 ==== Connection Analysis
 
@@ -1048,7 +1065,11 @@ The goal of this step is identifying concept links that are on the growth path.
 
 The goal of this step is measuring level of the links identifying on this previous step and frequency of their appearance.
 
+For example, In a 50k LOC C codebase, cognitive load grows with the number of global functions and struct definitions (Level 3 connections). In an equivalent Java codebase, load scales with interfaces, dependency graphs, and generic contracts (Level 4 connections).
+
 For example, the statements are abstractions on the growth path for unstructured BASIC and FORTRAN 66, because the program usually grows by adding global statements. However, for Visual BASIC and FORTRAN 77, statements are mostly contained in procedures and functions, so whey reasoning about the program we could analyze the entire procedure and save assertions about it, ignoring statement content after reaching to the conclusion.
+
+The 'growth path' isn't derived from language specs, but from what has demonstrably scaled in practice. This keeps the framework anchored to engineering reality rather than formal semantics.
 
 ==== Overall Level
 
@@ -1060,7 +1081,7 @@ There are kinds of trivial containment that does not add structure over containe
 
 The step of identifying concepts on the growth path is semiformal and has subjective elements.
 
-* Idiomatic programs needs to be considered, because "the determined Real Programmer can write FORTRAN programs in any language". It is also possible to write procedural code in OOP languages. The step of selecting idiomatic program is somewhat subjective. The understanding of good OOP stabilized only recently, and there are still disagreements on details or applicability of the principles.
+* Idiomatic programs needs to be considered, because "the determined Real Programmer can write FORTRAN programs in any language". It is also possible to write procedural code in OOP languages. The step of selecting idiomatic program is somewhat subjective. The understanding of good OOP stabilized only recently, and there are still disagreements on details or applicability of the principles. However, following industry standards and code size will reduce selection subjectivity. The programs should be good enough to grow in side, and industry standards would allow to filter out code that use language in non-intended way. While analysis of a single program could introduce wrong data, analyzing multiple programs will allow reducing subjectivity of the step.
 
 * The reasoning analysis step requires introspection and observation.
 
@@ -1111,6 +1132,8 @@ The extreme case of horizontal development is DSLs that lose general-purpose com
 [quote, Opportunities and constraints: The current struggle with BPMN, Jan Recker. University of Hamburg. 2010]
 In other words, BPMN clearly lacks advanced concepts to support tasks related to process decomposition. Some of the respondents clearly suggested that a more explicit graphical representation for process structure and decomposition should indeed be on the agenda for a revision of BPMN
 
+BPMN (Level 2 with Level 3 islands) illustrates the 'beautiful when small, ugly when grown up' pattern: process diagrams are intuitive for <50 activities, but cognitive load explodes when modeling enterprise workflows because the growth path remains flat global references. This validates the framework's core thesis: abstraction level predicts scalability, not initial usability.
+
 The same principles of the language levels could be applied to DSLs. For example, I've discussed this in my article link:../../2022/dzone/dsl-evolution/EvolvingDomainSpecificLanguages.adoc[Evolving Domain-Specific Languages].
 
 == Future Work
@@ -1126,6 +1149,8 @@ The following future work is planned:
 In this article, I've tried to demonstrate that the abstraction levels of programming languages could be classified by semiformal process. The resulting level is more detailed than "high" and "low". The measuring process has subjective elements, but I believe that some local consensus could be reached on these subjective elements.
 
 This framework can provide valuable lens for understanding language evolution. By focusing on connection types rather than paradigms, we can semi-formally identify when a language truly represents a new level of abstraction. The key insight is that each new level reduces cognitive complexity growth by adding a new way to reason about programs without needing to consider all details at once.
+
+*Practical takeaway*: Use the framework diagnostically — if maintenance costs grow non‑linearly, check whether you've exhausted your language's growth‑path abstractions or whether a higher‑ceiling language would better sustain long‑term maintainability.
 
 Caveats on using the scale:
 
@@ -1242,7 +1267,7 @@ As it could be seen, the organizations evolved using the same path. And they als
 [appendix]
 == Dynamically-typed Languages
 
-I'm quite skeptical about dynamically-typed languages, and I think that they could be efficiently used only on a relatively small scale and projects with short lifetimes. They are good when project is small (PoC or prototyping stage), and they allow quickly checking some ideas, they also allow not to formalize unclear parts too early.
+Dynamically-typed languages could be efficiently used on a relatively small scale and projects with short lifetimes. They are good when project is small (PoC or prototyping stage), and they allow quickly checking some ideas, they also allow not to formalize unclear parts too early.
 
 On larger or longer projects, additional costs of dynamic typing will outweigh savings from trying to figure out correct types and writing type annotations.
 
@@ -1254,9 +1279,9 @@ So dynamically-typed languages have an inherent non-linear factor for cognitive 
 
 There are some ways to address these problems in the languages. However, they are more like a patchwork rather than a solution. Gradual typing somewhat helps here, but the lack of enforced discipline creates gaps in the formalization, and some errors could go unnoticed for a long time. Tests are checking narrow execution scenarios and *expected* valid and invalid interactions. A rich type system can make a large class of *unexpected* interactions inexpressible.
 
-So I think that pure dynamically-typed languages will rarely go mainstream without some transformation that adds static typing. JavaScript has TypeScript and many major browser UI frameworks have switched to it, or have own DSLs. Python has a gradual typing. Even Lua has some variants with gradual typing.
+Pure dynamic typing shifts type contracts from compiler-enforced boundaries to developer memory and runtime checks. Modern ecosystems mitigate this via gradual typing (TypeScript, Python), IDE-assisted inference, and contract testing, but these add toolchain overhead and don't eliminate the non-linear cognitive scaling risk in large, long-lived codebases where context shifts frequently.
 
-I think dynamically-typed step in the language development could be entirely skipped for level 5 languages, and we could directly go to static typing directly. The static typing has to be added later anyway if language is used to develop large code bases, so why bother with an intermediate step and spend efforts later to bolt on static typing later while solving conflicts and carrying some dead weight of dynamically-typed legacy.
+Thus, I think dynamically-typed level 5 languages is not feasible. The static typing will be likely added later anyway if language is used to develop large code bases, so doing this intermediate step will cause spending efforts later to bolt on static typing while solving conflicts and carrying some dead weight of dynamically-typed legacy.
 
 A powerful type inference could make a statically-typed language looking like a dynamically-typed language. However, this is not necessary a good thing, the types need to be inferred by the developer as well when reading the code, and this information needs to be saved in the human memory while reading the code. So, even if there is a powerful type inference, it makes sense to leave type information at important checkpoints, and reasoning scope could be limited by these type annotations. However, at least, the IDE could supply us with precise information rather than guesses, so it is still a better situation than with dynamic typing.
 
