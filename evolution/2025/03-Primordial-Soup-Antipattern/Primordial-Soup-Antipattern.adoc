@@ -1,6 +1,6 @@
 = Primordial Soup Antipattern
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.1, 2026-04-30: Minor improvement
+0.2.0, 2026-05-02: Structural & theoretical alignment with abstraction-level
 :toc:
 :sectnums:
 
@@ -8,13 +8,25 @@ By {author}, {revnumber}, {revdate}
 
 NOTE: This is an opinion piece / blog‑style article, not a formal specification. It aims to identify a recurring problem (the “Primordial Soup” antipattern) and provoke discussion – not to provide a complete technical solution. Antipattern here used informally – not as a formally catalogued antipattern.
 
-*TL;DR:* A single global DI context (like Spring’s ApplicationContext) creates naming conflicts, hidden dependencies, and poor reusability – a “primordial soup”. Better isolation (e.g., OSGi) or hierarchical composition (e.g., UI frameworks) avoids this. A new language with native system operators is needed (details in future work).
+*TL;DR:* Spring’s single global context makes wiring easy for small apps, but as systems grow it turns into a “primordial soup” of naming clashes, hidden dependencies, and accidental coupling. The root cause isn’t the global context itself, but the absence of explicit module boundaries and formal composition rules that keep components isolated and predictable. Scaling dependency injection safely requires adding structured scoping and system-level contracts—not rewriting existing frameworks.
+
+*Revision History*
+[cols="1,2,6"]
+|===
+| Revision | Date | Comment
+
+| 0.2.0   | 2026-05-02 | Structural & theoretical alignment with abstraction-level
+| 0.1.1   | 2026-04-30 | Minor improvement
+| 0.1.0   | 2025-09-26 | Initial version
+|===
 
 == Introduction
 
 The Spring Framework is a mature dependency injection framework known for its extensive feature set. It is also likely the most popular one for Java server-side development and is used in many projects. However, it has a fundamental problem that is hard to fix without breaking backward compatibility.
 
-This is an antipattern similar to the "God Object" antipattern in OOP. The systems created by the Spring Framework create components in the same application context. Every component can interact with every other component. This leads to naming conflicts, scalability issues, and reuse problems as the system grows. While the Spring Framework supports modularity, it lacks structural isolation and higher-level composition operators that are needed for truly composable systems.
+This is an antipattern similar to the *"God Object"* antipattern in OOP. Just as a God Object accumulates too many responsibilities and knowledge, a Spring `ApplicationContext` accumulates too many components in a single resolution space. Every component can potentially interact with every other component. This leads to naming conflicts, hidden dependencies, scalability issues, and reuse problems as the system grows.
+
+While the Spring Framework supports modularity, it lacks structural isolation and higher-level composition operators that are needed for truly composable systems.
 
 In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations], I named this antipattern "God System," but now I think it is more accurate to call it **Primordial Soup**.
 
@@ -22,21 +34,51 @@ This antipattern is not exclusive to the Spring Framework. Many other dependency
 
 In this article, I'll discuss why this antipattern occurred in the Spring Framework, what existing alternatives exist, and whether it could be fixed.
 
-What article is not:
+[NOTE]
+====
+**What this article is not**:
 
-* *Not a systematic literature review* – examples are based on author’s experience.
-
+* *Not a systematic literature review* – examples are based on author's experience.
 * *Not a complete solution* – the proposed language is described elsewhere.
+* *Not a criticism of Spring's overall value* – Spring is successful; this points to a specific design trade‑off.
+====
 
-* *Not a criticism of Spring’s overall value* – Spring is successful; this points to a specific design trade‑off.
+[TIP]
+====
+For full context, read the abstraction-level framework first:
+link:../01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages].
+This article assumes familiarity with Levels 2–5 and applies them to *system composition*.
+====
 
-== Primordial Soup in Biology
+=== Biological Parallel: From Soup to Holarchy
 
-https://en.wikipedia.org/wiki/Primordial_soup[Primordial soup] is a hypothetical prebiotic chemical soup thought to have existed on the early Earth. It is believed to have been the source of the first living organisms. The primordial soup is a mixture of organic molecules thought to have been formed by the action of lightning, ultraviolet radiation, and other natural processes on the early Earth. The primordial soup is thought to have been the source of the first living organisms.
+|===
+| Stage | Biological Term | Key Innovation | Software Parallel | Abstraction Level
 
-During this evolutionary phase, chemical reactions occurred freely between different components, and the most advanced "life forms" in it were possibly similar to modern viruses. The next phase was protocell structures, where a boundary prevented free reactions. These protocells had control over what comes in and what comes out.
 
-The first version of the primordial soup hypothesis is considered somewhat obsolete, as there are multiple refinements to it. However, the core concept remains: there is a large scope where molecules can freely interact.
+| 1 | Primordial soup | Free molecular interaction | Global `ApplicationContext` | Level 2 (flat)
+| 2 | Protocells | Lipid membranes create bounded contexts | Child contexts, module boundaries | Level 3 (structured)
+| 3 | Eukaryotic cells | Organelles with formal transport interfaces | Component interfaces, generics | Level 4 (component contracts)
+| 4 | Metazoans | Specialized tissues/organs with signaling protocols (hormones, nerves) | System contracts, constraint-based composition | Level 4 (system contracts)
+| 5 | Holarchic organisms | Organs as *holons*: autonomous yet composable via developmental programs | Declarative system assembly, environment-driven composition | Level 5 (holonic)
+|===
+
+[quote, Arthur Koestler, The Ghost in the Machine]
+A holon is an entity that is simultaneously a whole and a part.
+
+Key insight: *Boundaries enable complexity, but composition requires protocols*.
+A liver cell doesn't "scan the global body context" for glucose — it receives
+explicit signals via formal channels. When channels are well-defined, organs
+evolve independently yet compose reliably.
+
+Software parallel:
+- Global `ApplicationContext` = primordial soup ✓ (necessary foundation)
+- Missing: standard "membrane" primitive for module boundaries ✗
+- Missing: formal "signaling protocol" for inter-system contracts ✗
+- Missing: declarative "developmental program" for system assembly ✗
+
+The antipattern isn't the global medium — it's attempting metazoan-scale complexity
+without even protocell-level composition primitives.
 
 == Primordial Soup in the Spring Framework
 
@@ -44,7 +86,7 @@ In this context, all components can see each other (scopes will be discussed lat
 
 For example, if there are two different authentication systems for different ports and they both use the same generic authentication service interface (but with different configuration), it might be very hard to force them to use the correct one if these reusable components are developed independently by different teams and happen to meet in the same application for the first time. This is not a problem in small systems but becomes problematic in large systems where any component can potentially inject another component via a compatible interface.
 
-To make the situation more complicated, even if there is no explicit dependency injection, there is the interface ApplicationContextAware and the method getBean(). While this is a discouraged pattern, it is a necessary feature to work around tricky situations and is used in framework-type code quite often. Therefore, there could be even more hidden dependencies beyond those created by type-based dependency injection.
+To make the situation more complicated, even if there is no explicit dependency injection, there is the interface `ApplicationContextAware` and the method `getBean()`. While this is a discouraged pattern, it is a necessary feature to work around tricky situations and is used in framework-type code quite often. Therefore, there could be even more hidden dependencies beyond those created by type-based dependency injection.
 
 The different configuration and XML files do not decompose the system into smaller chunks; they are definition groups, not a visibility scope. They could be considered spots of different colors in the Primordial Soup.
 
@@ -61,6 +103,38 @@ Scopes primarily address instance lifecycle and isolation rather than structural
 
 == Why this is an antipattern?
 
+[NOTE]
+====
+**Key reframing**: The problem isn't "global resolution" — it's *global-only resolution* without Level 3 structured scoping or Level 4 system-level contracts layered on top. A root context is necessary to ground composition; the antipattern emerges when that's the *only* resolution plane.
+====
+
+Spring's `ApplicationContext` **is** a Level 5 composition operator:
+- Dynamically resolves dependencies from environment
+- Manages lifecycles, scopes, instantiation
+- Assembles behavior from declarative metadata (`@Configuration`, annotations)
+
+**However**, it operates exclusively on *Java components*, not *systems*.
+When applied to architectural composition without Level 3 structure or Level 4
+contracts, it degenerates to Level 2 flat resolution.
+
+[cols="1,2,2,2,1", options="header"]
+|===
+| Level | Connection Type | System Pattern | Language Parallel | Spring Support
+
+| 2 | Flat (global) | Global registry, type/name resolution | Global variables | ✅ Default (`@Autowired` in global context)
+| 3 | Structured (contextual) | Explicit inputs, local scope, deliberate exports | Function params + locals | ❌ Missing as primitive
+| 4 | Formal (partial contracts) | Constraint-based transformers; works with partial graphs | Generics, higher-order functions | ❌ Missing for systems
+| 5 | Environment-driven holon | Declarative assembly from metadata | *Proposed*: Holons | ✅ Component-level only
+|===
+
+This is a *granularity mismatch*, not a missing capability:
+- ✅ Level 5 engine exists (ApplicationContext)
+- ✅ Level 4 contracts exist for components (interfaces, generics)
+- ❌ Level 3 structure missing for systems (no explicit inputs/locals/exports)
+- ❌ Level 4 operators missing for systems (no constraint-based transformers)
+
+Result: Level-4 components composed via Level-2 resolution → Primordial Soup.
+
 This causes several problems in the Spring Framework:
 
 * The first obvious problem is that components must be named, and the name of a component must be unique. This causes occasional conflicts when two different independent frameworks choose a nice name like "ConfigurationManager" and clash over it. When implementing a starter, naming must be done carefully even for internal components. Names should include the framework name to avoid clashes.
@@ -70,6 +144,123 @@ This causes several problems in the Spring Framework:
 * The 'Customizer' pattern in the Spring Framework is also problematic. For example, `RestTemplateCustomizer` applies to all `RestTemplate` instances that support customizers. Special effort is needed to apply it only to a specific `RestTemplate`.
 
 There are more problems of this kind that share a common theme: there are too many possible interactions, and there is no way to limit them because we have a Primordial Soup.
+
+== What Structured Composition Looks Like (Pseudocode)
+
+The problems described earlier—naming collisions, accidental cross-wiring, and unbounded customizer application—all stem from flat resolution. The pseudocode below demonstrates how structured composition (Level 3) and constraint-based operators (Level 4) resolve these issues by making boundaries, dependencies, and exports explicit.
+
+[NOTE]
+====
+Pseudocode conventions:
+
+- `holon class/interface` := composable unit with explicit boundaries
+- `in X` := required input dependency (like function parameter)
+- `out X()` := deliberately exported capability (like function return)
+- `local X()` := internal component, invisible outside boundary
+- `holon fn { in/out }` := composable holon function type (higher-order composition); it specifies a holon definition that can be passed here and used with specified inputs and outputs. Lexical scoping: holon fn instances can reference `in`/`out` components from its enclosing holon, enabling closure-like composition.
+
+This is conceptual pseudocode, not an existing language.
+====
+
+Below, pseudocode for simple order management service.
+
+[source,text,role="conceptual"]
+.Level 3 Sample - Structured Composition (pseudocode)
+----
+// reusable holon definition part
+holon aspect EnableMonitoring {
+    in MonitoringService;
+    // ...
+}
+
+@EnableMonitoring // adds dependencies and services required for monitoring
+holon class OrderDaoLayer {
+    in DataSource; // input component
+    in TransactionManager;
+    in DaoInstrumentation; // some common components for DAO from outer context
+
+    local OrderStorageUtil(); // some internal component that allows
+    out OrderDao(); // support for order operations. DataSource, TransactionManager, etc. are injected
+    out OrderItemDao(); // support for order item operations (publicly available)
+}
+
+holon class OrderServices {
+    in OrderDaoLayer; // all out components will be available
+    in PaymentService; // specific service
+
+    local processingUtil = OrderProcessingUtil(); // explicit naming
+    out OrderPaymentService(orderProcessingUtil = processingUtil); // output service and explicit injection
+}
+----
+
+[NOTE]
+====
+How this solves the antipattern:
+- `OrderDao` and `OrderItemDao` are *deliberately exported*, not globally registered
+- Two independent teams can define `OrderDaoLayer` holons with *local* names—no global collision
+- `@EnableMonitoring` adds cross-cutting behavior *without* scanning the global context
+- Interaction with outer scope explicit. Internally it could use automatic dependency injection, but this is limited in the scope of holon.
+- The pseudocode directly maps to concepts that we have in mind. There is no need to maintain mental mapping from subsystem and layers to code and packages.
+- The dependency scope is explicit, but it is still manageable because we could specify dependency at system level as well. No need to write ArchUnit tests for this.
+- Eliminates `RestTemplateCustomizer`-style accidental global application: monitoring is scoped to holons that explicitly `in EnableMonitoring`
+====
+
+Sample below demonstrates how we could work with system interfaces and lambda systems to implement Eclipse-like extension points, where there is a need for some quick information that readily available and possibly expensive lazily loaded components.
+
+[source,text,role="conceptual"]
+.Level 4 Sample - Eclipse-like extension points (pseudocode)
+----
+// The opaque holon interface without content
+// Its role is to remove allocated resources when outer holon decomposes
+holon interface Subscription {
+}
+
+holon interface ActionManager {
+    // action registration requires name and creation function that explicitly register it
+    out fn register(name : String, registrationAction : holon fn {
+        in ActionContext; // context passed to function
+        out Action;  // must provide action as output
+    }) : Subscription; // returns empty holon; cleanup triggered when parent decomposes
+}
+
+holon class IdeActionManager extends ActionSupport {
+    // implementation of the action registration
+}
+
+holon class MyPlugin {
+    in actions : ActionManager;
+    // creates local holon with name and lazy action registration
+    // action manager will create implementation when needed for menu or other goals
+    local MyService(): // local service
+
+    local actions.register(name = "MyAction") {
+        // This will be lazily executed later
+        // ActionContext is implicitly available and injected
+        // MyService is also available from enclosing scope
+        out MyAction(); // MyAction extends Action
+    }
+}
+----
+
+[NOTE]
+====
+How this solves the antipattern:
+- Extension registration is *type-safe* and *constraint-verified* at composition time, not runtime
+- `MyPlugin` doesn't need to know *how* `ActionManager` stores or invokes actions—only that it satisfies the contract
+- Multiple plugins can register actions with the *same local name* ("MyAction") because names are scoped to the registering holon
+- This enables *constraint-based composition*: any holon exporting `ActionManager` can be composed with any holon registering actions
+- It also supports more flexibly managed lifecycles for components. For example, above, the action manager could instantiate and de-instantiate the lambda-system for an action to save resources when idle.
+====
+
+[cols="2,2", options="header"]
+|===
+| Spring Today (Level 2) | Structured Composition (Level 3/4)
+| `@Autowired` scans global context | `in X` declares explicit dependency
+| Bean names must be globally unique | Holon-local names; no cross-holon collision
+| `@Qualifier("billing.kafka")` convention | `out OrderDao()` deliberate export contract
+| ArchUnit tests enforce boundaries | Compiler/composition-time boundary enforcement
+| `RestTemplateCustomizer` applies globally | `@EnableMonitoring` scoped to explicit `in`
+|===
 
 == Source of Primordial Soup Antipattern in the Spring Framework
 
@@ -92,6 +283,8 @@ In addition to the problem of not finding some component due to a tricky conditi
 These problems can be worked around if encountered by selectively disabling auto-configurations, defining custom configurations, and sometimes even by class substitution or copying code. So the problem is often non-fatal, but the efforts spent to solve it could have been invested elsewhere.
 
 We are now in a situation where the application has grown to the point where there are too many possible interactions that need management. The Primordial Soup antipattern creates O(N*N) possible interactions between components. Most of these interactions are excluded by types, but as the application grows, components of the same type but different purpose enter the same application, and these components start interacting in unexpected ways.
+
+As shown in the biological parallel table, Spring remained at level 2 resolution while applications grew to require level 3 structure.
 
 == Other Approaches
 
@@ -137,13 +330,13 @@ The component definition file in the OSGi Framework looks like the following:
 
 In this file, the reference declaration declares a reference to an external service. The reference is used in the bean definition to inject the external service into the consumer bean. The service declaration exposes a service to the service registry. So, while interactions with the service registry are more controlled, it is still a Primordial Soup on the service registry level. But it is a much more controlled Primordial Soup than the Spring Framework. Components are put into it explicitly and taken from it explicitly. There is no way to get a service from the service registry without a reference declaration. Also, there are filtering mechanisms that allow services to be filtered by properties provided during service declaration.
 
-In the biological analogy, the OSGi Framework reaches the level of protocells at least because there is environmental isolation. It does not reach the level of bacteria because it suffers from bundle-level uniqueness requirements. Bundles are isolated by class loader mechanisms but are usually declared as singletons in the OSGi runtime. What happens in a Blueprint XML file can occur only once in the context of the OSGi runtime.
+In the biological analogy, the OSGi Framework reaches the level of **protocells** at least because there is environmental isolation. It does not reach the level of eukaryotic cells or metazoans because it suffers from bundle-level uniqueness requirements. Bundles are isolated by class loader mechanisms but are usually declared as singletons in the OSGi runtime. What happens in a Blueprint XML file can occur only once in the context of the OSGi runtime.
 
 Different tricks can be used to partially overcome this limitation, but we lose usability of the Blueprint Framework in such cases because these cases need to be explicitly handled in the provider code. For example, the https://aries.apache.org/documentation/index.html[Apache Aries] project uses it extensively to provide many Java EE services in an OSGi context.
 
 The OSGi Framework is often critiqued for high complexity, but this critique is mostly related to the highly dynamic nature of OSGi rather than OSGi Blueprint. Most web applications did not need this highly dynamic nature because, after startup, the application structure is mostly fixed, but they are forced to pay for it with increased complexity and non-atomic deployment. Better locality and simplicity of OSGi Blueprint services were not sufficient to compensate for other costs introduced by OSGi. OSGi Blueprint itself was only a half-step toward composable systems, offering some benefits but not enough. Non-atomic deployment occurred precisely because OSGi Blueprint lacked higher-level system composition operators.
 
-Spring Boot with Docker provided an atomic deployment solution without that additional cost, killing potential development in this area.
+Spring Boot with Docker provided an atomic deployment solution without that additional cost, which largely halted further investment in this direction.
 
 === Hierarchical Composition in React, JetPack Compose, and Others
 
@@ -179,7 +372,7 @@ The problem with these frameworks is that they are specialized for UI rather tha
 
 They could be used as inspiration for richer system composition operators. Just imagine that instead of lists and boxes, there are repositories, web servers, data sources, and other components.
 
-In the biological evolution analogy, they could be considered specialized multicellular organisms. The important thing is that we do not need to name components, and we do not need to care about how they are named in separate component trees—the names are local and often implicit.
+In the biological evolution analogy, they could be considered **specialized multicellular organisms**. The important thing is that we do not need to name components, and we do not need to care about how they are named in separate component trees—the names are local and often implicit.
 
 === Holon Composition Operators
 
@@ -191,13 +384,13 @@ The goal is to support most useful parts of Spring Boot and plugin frameworks li
 
 == Is it possible to fix the Spring Framework?
 
-I do not believe it is possible to fix this without significantly breaking backward compatibility. This will mostly affect system-level components like ConfigurationProperties, AOP, post-processors, and others. These types of components need to be rewritten almost completely.
+I do not believe it is possible to fix this without significantly breaking backward compatibility. This will mostly affect system-level components like `ConfigurationProperties`, AOP, post-processors, and others. These types of components need to be rewritten almost completely.
 
-The effect on components will be quite small, but the glue must be changed, and the Spring Framework is mostly about that glue. The next level of components like JDBC DataSource, Transaction, and other connectors will need to be significantly refactored and repackaged into reusable modules. This will be a significant refactoring as well. The components could stay almost the same, but there is a need for a system composition language.
+The effect on individual components will be quite small, but the glue must be changed, and the Spring Framework is mostly about that glue. The next level of components like JDBC `DataSource`, Transaction, and other connectors will need to be significantly refactored and repackaged into reusable modules. This will be a significant refactoring as well. The components could stay almost the same, but there is a need for a system composition language.
 
 For XML-based system definition, this would be relatively easy, as extensions like hierarchical systems or lambda-systems are easy to introduce. The React framework could be used as one of the inspirations for such a language. For Java-based DSL, things will be quite challenging, and I currently do not see a clean way to do this.
 
-It will become particularly complex if we attempt to statically type such a DSL in a reasonable way. There are already many rough edges for Java DSL in the Spring Framework. For example, the `PreAuthorize` annotation would have liked to accept a typed lambda abstraction but could only accept a string containing code. With higher-level constructs, the need for such code fragments will likely grow further.
+It will become particularly complex if we attempt to statically type such a DSL in a reasonable way. There are already many rough edges for Java DSL in the Spring Framework. For example, the `@PreAuthorize` annotation would have liked to accept a typed lambda abstraction but could only accept a string containing code. With higher-level constructs, the need for such code fragments will likely grow further.
 
 Therefore, the most likely approach will be to introduce a system definition language. Such a language will eventually be rich enough to be a full-blown general-purpose programming language. It will provide static typing, system composition operators, and use a basic OOP language as a foundation.
 
@@ -209,7 +402,11 @@ Thus, the final result will likely be a new general-purpose programming language
 
 == Conclusion
 
-The Spring Framework was one of the early pioneers in the area, and the first tasks it faced were very small. This antipattern becomes more problematic as systems grow. With system growth, the pattern causes more and more problems. They can be worked around, avoided by some design patterns, and the pain can be tolerated. Projects can be refactored further. However, this does not change the fact that there is a composition problem. While I believe this antipattern cannot be easily fixed in the Spring Framework without a major rewrite, there is no reason to repeat it in new dependency injection frameworks.
+The Spring Framework was one of the early pioneers in the area, and the first tasks it faced were very small. This antipattern becomes more problematic as systems grow. With system growth, the pattern causes more and more problems. They can be worked around, avoided by some design patterns, and the pain can be tolerated. Projects can be refactored further. However, this does not change the fact that there is a composition problem.
+
+The Primordial Soup emerges from a **composition granularity mismatch**: Spring's `ApplicationContext` is a Level 5 composition operator, but it only composes Java components within a flat (Level 2) resolution space. Without Level 3 structured boundaries and Level 4 system-level contracts, this engine degenerates to runtime negotiation across a global pool of beans.
+
+While I believe this antipattern cannot be easily fixed in the Spring Framework without a major rewrite, there is no reason to repeat it in new dependency injection frameworks. The path forward is not to discard Spring's powerful assembly engine, but to layer structured scope and formal system contracts on top of it—evolving from component wiring to declarative system assembly.
 
 == Further reading / related work
 
