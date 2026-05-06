@@ -1365,7 +1365,6 @@ As it could be seen, the organizations evolved using the same path. And they als
 
 === Coq Proof Assistant
 
-
 The abstraction‑level framework applies beyond general‑purpose programming and data systems. In proof assistants like Coq, we observe the same pattern: **constructs that approach Level 4 are composed via Level 2 mechanisms**, creating asymmetric reasoning boundaries that scale poorly as proof artefacts grow.
 
 Coq provides `Module Type` (theory/interface), `Module` (model/implementation), and Functors (parameterized contracts). Yet these operate in a syntactic layer separate from the core proof language (the Calculus of Inductive Constructions, CIC). A module cannot be passed as a proof term, stored in a variable, or injected contextually into a proof script. **Module types are not first‑class in the term language**; while they define contracts, they cannot be referenced directly as hypotheses inside a proof.
@@ -1412,7 +1411,7 @@ The flat‑resolution pattern leads to concrete problems that mirror Level 2 sca
 - Temporary axioms added for convenience pollute the global context; colleagues accidentally depend on unproven assumptions because there is no dependency declaration to make boundaries explicit.
 - Parallel work is hampered: two developers cannot independently refine different implementations of the same theory without risking name clashes or implicit cross‑dependencies, as there is no first‑class mechanism to inject one theory into another proof context.
 
-These are **composition problems, not logic problems**. The Curry‑Howard correspondence extends naturally to object‑oriented patterns: interfaces as theories, implementations as models, dependency injection as assuming theories as hypotheses. Coq's module system was a pioneering step, but it remains a Level‑3 solution for organising theories, not a Level‑4 or Level‑5 solution for composing proofs at the term level.
+These are **composition problems, not logic problems**. The Curry‑Howard correspondence extends naturally to object‑oriented patterns: interfaces as theories, implementations as models, dependency injection as assuming theories as hypotheses. Coq's module system was a pioneering step, but it remains a Level‑3 solution for organizing theories, not a Level‑4 or Level‑5 solution for composing proofs at the term level.
 
 ==== What a Level‑5 proof assistant could look like
 
