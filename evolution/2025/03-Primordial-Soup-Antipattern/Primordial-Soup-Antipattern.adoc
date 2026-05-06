@@ -1,6 +1,6 @@
 = Primordial Soup Antipattern
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-0.2.0, 2026-05-02: Structural & theoretical alignment with abstraction-level
+0.2.1, 2026-05-06: Style fixes, and Spring Modulith Reference
 :toc:
 :sectnums:
 
@@ -15,6 +15,7 @@ NOTE: This is an opinion piece / blog‑style article, not a formal specificatio
 |===
 | Revision | Date | Comment
 
+| 0.2.1   | 2026-05-06 | Style fixes, and Spring Modulith Reference
 | 0.2.0   | 2026-05-02 | Structural & theoretical alignment with abstraction-level
 | 0.1.1   | 2026-04-30 | Minor improvement
 | 0.1.0   | 2025-09-26 | Initial version
@@ -82,7 +83,7 @@ without even protocell-level composition primitives.
 
 == Primordial Soup in the Spring Framework
 
-In this context, all components can see each other (scopes will be discussed later at <<scopes>>). Even if a component is considered internal while being technically public, it could still be injected by some trick and used. Components are mostly injected by type, and it is easy to inject something by a common interface that is actually implemented by another component as well.
+In this context, all components can see each other (scopes will be discussed later at <<scopes>>). Even if a component is considered internal while being technically public, it could still be injected via reflection or workarounds and used. Components are mostly injected by type, and it is easy to inject something by a common interface that is actually implemented by another component as well.
 
 For example, if there are two different authentication systems for different ports and they both use the same generic authentication service interface (but with different configuration), it might be very hard to force them to use the correct one if these reusable components are developed independently by different teams and happen to meet in the same application for the first time. This is not a problem in small systems but becomes problematic in large systems where any component can potentially inject another component via a compatible interface.
 
@@ -105,17 +106,12 @@ Scopes primarily address instance lifecycle and isolation rather than structural
 
 [NOTE]
 ====
-**Key reframing**: The problem isn't "global resolution" — it's *global-only resolution* without Level 3 structured scoping or Level 4 system-level contracts layered on top. A root context is necessary to ground composition; the antipattern emerges when that's the *only* resolution plane.
+The problem isn't "global resolution"; it is global-only resolution without Level 3 structured scoping or Level 4 system-level contracts layered on top. A root context is necessary to ground composition; the antipattern emerges when that is the only resolution plane.
 ====
 
-Spring's `ApplicationContext` **is** a Level 5 composition operator:
-- Dynamically resolves dependencies from environment
-- Manages lifecycles, scopes, instantiation
-- Assembles behavior from declarative metadata (`@Configuration`, annotations)
+Spring's `ApplicationContext` is a Level 5 composition operator: it dynamically resolves dependencies from the environment, manages lifecycles and instantiation, and assembles behavior from declarative metadata. However, it operates exclusively on Java components, not systems.
 
-**However**, it operates exclusively on *Java components*, not *systems*.
-When applied to architectural composition without Level 3 structure or Level 4
-contracts, it degenerates to Level 2 flat resolution.
+When applied to architectural composition without Level 3 structure or Level 4 contracts, it degenerates to Level 2 flat resolution. This is a granularity mismatch, not a missing capability. The Level 5 engine exists, and Level 4 contracts exist for components, but Level 3 structure is missing for systems. There are no explicit inputs, locals, or exports. And Level 4 operators are missing for systems—there are no constraint-based transformers. The result is Level-4 components composed via Level-2 resolution, which is Primordial Soup.
 
 [cols="1,2,2,2,1", options="header"]
 |===
@@ -143,7 +139,7 @@ This causes several problems in the Spring Framework:
 
 * The 'Customizer' pattern in the Spring Framework is also problematic. For example, `RestTemplateCustomizer` applies to all `RestTemplate` instances that support customizers. Special effort is needed to apply it only to a specific `RestTemplate`.
 
-There are more problems of this kind that share a common theme: there are too many possible interactions, and there is no way to limit them because we have a Primordial Soup.
+There are additional problems of this kind that share a common theme: there are too many possible interactions, and there is no way to limit them because we have a Primordial Soup.
 
 == What Structured Composition Looks Like (Pseudocode)
 
@@ -159,10 +155,12 @@ Pseudocode conventions:
 - `local X()` := internal component, invisible outside boundary
 - `holon fn { in/out }` := composable holon function type (higher-order composition); it specifies a holon definition that can be passed here and used with specified inputs and outputs. Lexical scoping: holon fn instances can reference `in`/`out` components from its enclosing holon, enabling closure-like composition.
 
+The pseudocode assumes type-based resolution by default, with name-based resolution used only when explicitly specified.
+
 This is conceptual pseudocode, not an existing language.
 ====
 
-Below, pseudocode for simple order management service.
+Below is pseudocode for a simple order management service.
 
 [source,text,role="conceptual"]
 .Level 3 Sample - Structured Composition (pseudocode)
@@ -179,7 +177,7 @@ holon class OrderDaoLayer {
     in TransactionManager;
     in DaoInstrumentation; // some common components for DAO from outer context
 
-    local OrderStorageUtil(); // some internal component that allows
+    local OrderStorageUtil(); // some internal component supporting Order-related DAOs
     out OrderDao(); // support for order operations. DataSource, TransactionManager, etc. are injected
     out OrderItemDao(); // support for order item operations (publicly available)
 }
@@ -404,7 +402,7 @@ Thus, the final result will likely be a new general-purpose programming language
 
 The Spring Framework was one of the early pioneers in the area, and the first tasks it faced were very small. This antipattern becomes more problematic as systems grow. With system growth, the pattern causes more and more problems. They can be worked around, avoided by some design patterns, and the pain can be tolerated. Projects can be refactored further. However, this does not change the fact that there is a composition problem.
 
-The Primordial Soup emerges from a **composition granularity mismatch**: Spring's `ApplicationContext` is a Level 5 composition operator, but it only composes Java components within a flat (Level 2) resolution space. Without Level 3 structured boundaries and Level 4 system-level contracts, this engine degenerates to runtime negotiation across a global pool of beans.
+The Primordial Soup emerges from a composition granularity mismatch: Spring's `ApplicationContext` is a Level 5 composition operator, but it only composes Java components within a flat Level 2 resolution space. Without Level 3 structured boundaries and Level 4 system-level contracts, this engine degenerates to runtime negotiation across a global pool of beans.
 
 While I believe this antipattern cannot be easily fixed in the Spring Framework without a major rewrite, there is no reason to repeat it in new dependency injection frameworks. The path forward is not to discard Spring's powerful assembly engine, but to layer structured scope and formal system contracts on top of it—evolving from component wiring to declarative system assembly.
 
@@ -415,3 +413,4 @@ While I believe this antipattern cannot be easily fixed in the Spring Framework 
 * Spring Documentation:
 ** https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html[Bean Scopes]
 ** https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/autowired-qualifiers.html[Fine-tuning Annotation-based Autowiring with Qualifiers]
+** https://docs.spring.io/spring-modulith/reference/[Spring Modulith Reference] – Adopts OSGi-style boundary enforcement via ArchUnit rules, catching accidental cross-module wiring at test time. However, it stops at architectural verification. Modules are static package groupings resolved in a single flat `ApplicationContext`. Without parameterizable inputs, lexical scoping, or multi-instancing support, it cannot satisfy the Level 3 structured composition benchmark. It reduces naming collisions and hidden dependencies, but the underlying granularity mismatch remains: Level 5 assembly operating on Level 2 topology.

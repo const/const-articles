@@ -1,6 +1,6 @@
 = Measuring Abstraction Level of Programming Languages
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.3, 2026-05-02
+v0.1.4, 2026-05-06
 :sectnums:
 :toc:
 :toclevels: 4
@@ -21,6 +21,7 @@ This is the first article in the series, and its primary goal is to introduce th
 |===
 | Revision | Date | Comment
 
+| 0.1.4   | 2026-05-06 | Added Coq discussion, minor clarifications on level translation, style fixes
 | 0.1.3   | 2026-05-02 | Clarified reasoning cost topology, integrated practical diagnostics, refined Level 5 framing
 | 0.1.2   | 2026-04-30 | Correcting incorrect statements that caused overclaims
 | 0.1.1   | 2025-10-12 a|
@@ -52,35 +53,51 @@ It could be noted that general-purpose programming languages describe state and 
 
 == Why to Evaluate?
 
-This is possibly the most critical question. The behavioral complexity of a program usually grows over time due to changes in requirements, understanding of domain, bug fixes, external integrations, and other factors.
+Software maintenance is fundamentally a cognitive task. To understand why abstraction levels matter, we must examine it from two complementary perspectives: the **per-task experience** and the **project history**.
 
-On the other hand, the complexity of understanding the program also changes in this process, and it usually grows with increased behavioral complexity, usually only taking minor reductions during major refactorings and/or rewrites.
+=== The Per-Task View: How We Encounter a Change
 
-This cognitive complexity directly affects costs of fixing bugs, adding new features, or modifying old behavior. This is because after writing some initial state of the program, we are modifying its behavior. To modify behavior, we need to perform the following steps:
+When modifying behavior, developers follow four cognitive steps:
 
-1. Locate *all* relevant places that affect behavior that should be modified
-2. Understand what changes in these places will produce desired changes in behavior without introducing undesired ones
-3. Implement these changes
-4. Test the changes
+1. Locate *all* relevant places that affect the target behavior.
+2. Understand what changes will produce the desired outcome without introducing side effects.
+3. Implement these changes.
+4. Test the result.
 
-The cost of steps 1 and 2 strongly depends on cognitive complexity of the program, and with program size growth, starts to occupy most of the developer's time. For example, see https://news.ycombinator.com/item?id=18442941[the post about Oracle Database development process] that describes horrors of working with a large codebase.
+The cost of steps 1 and 2 dominates development time. For any given task, the codebase divides into four quadrants based on whether code *should* have been examined and whether it *actually was*:
 
-However, in different programming languages, the cognitive complexity growth curve is different. In my intuition, the growth curve is like the diagram below. I talked with different developers, and most of them have similar intuition about this process.
+[cols="2,3,3",options="header"]
+|===
+| | **Not Viewed** | **Viewed**
+| **Should Have Been Viewed**
+| *Missed Scope* → Bugs, regressions, incomplete fixes
+| *Productive Work* → Necessary reasoning, bounded by human working memory
+| **Should Not Have Been Viewed**
+| *Ideal Code* → Zero cognitive load for this task; the goal of abstraction
+| *Cognitive Pollution* → Context switching, wasted time, reduced quality
+|===
+
+Well-designed systems maximize the *Ideal Code* quadrant. This explains the **code review paradox**: 10 lines changed trigger intense scrutiny, while 30 files touched across multiple modules often get "LGTM". This is not reviewer negligence; it is context exhaustion. Human working memory cannot hold arbitrary amounts of code; beyond a threshold, reasoning collapses into pattern-matching.
+
+=== The Project History View: How Complexity Accumulates
+Over time, behavioral complexity grows due to changing requirements, domain understanding, bug fixes, and external integrations. The cognitive cost of the per-task steps does not remain constant. In different languages, the cognitive complexity growth curve follows different trajectories:
 
 image::images/diagram1.png[complexity growth diagram]
 .The diagram shows cognitive complexity (y‑axis) vs. behavioral complexity (x‑axis). Lower‑level languages start with lower initial complexity but experience steeper growth. Higher‑level languages have higher entry cost but flatter growth.
 
-There are the following important points about this diagram:
+Key observations from this curve:
 
-* The lower the level of the language, the lower the entry cost for it. Elements of the assembler language are easiest to understand. There are just too many of them, particularly in the case of CISC ones. Java brings a lot of cognitive costs to the table even for a Hello World program if one wants to understand the program completely.
+* Lower-level languages have lower entry costs. Their primitives are easier to grasp initially, but there are simply too many of them to coordinate at scale.
+* Behavioral complexity causes non-linear growth in cognitive complexity. Eventually, every program reaches an unmaintainable threshold where the per-task cost exceeds human capacity.
+* Higher-level languages slow this growth. They enable us to implement more complex behavior before hitting that threshold.
 
-* The growth of behavioral complexity causes non-linear growth in cognitive complexity of the program. So it becomes harder and harder to understand what is going on in the program. Eventually, every program reaches an unmaintainable level.
+The "program" here is not limited to a single OS application. A set of related microservices maintained by a team, sharing concepts and code, constitutes a single reasoning scope.
 
-* The higher the level of the language, the slower the complexity growth. So we could implement more complex behavior in the program before it reaches the unmaintainable level.
+=== Connecting the Views
 
-The program is not necessarily one application in the sense of an operating system. A set of related microservices that are maintained by some team could be considered as a single program if there is shared code and concepts.
+Abstraction levels bend the project-history curve by partitioning the per-task reasoning graph. Each new level introduces boundaries that push more code into the *Ideal Code* quadrant for every new change request. A reliable measuring approach of programming language levels allows us to predict which technologies will sustain this partitioning as systems grow, and which will force developers into cognitive overload. For example, see https://news.ycombinator.com/item?id=18442941[the post about Oracle Database development process] that describes the realities of working with a large codebase.
 
-So, a reliable measuring approach of programming languages level will allow us to make the following deductions:
+So, a reliable measuring approach will allow us to make the following deductions:
 
 * It would allow us to filter out technologies that provide fast start and fast growth of complexity. Some low-code solutions are just like this. There are many nice small demos, but problems arise when the technology is implemented at a larger scale. I had personal experience with some of such technologies.
 
@@ -142,6 +159,23 @@ The historically next type of connection is by a name or label in a flat global 
 * Line numbers and go to
 
 Names do not have to be explicit. In the sequence, items are named by their position. Also, names could be composite, for example in SQL there are names like `catalog.schema.table`. These are still global names like human names where there is a first name, a last name, and other name components.
+
+[NOTE]
+====
+**Clarifying Level 1 vs Level 2**:
+
+- **Level 1** is execution based *only on the current state*: it retains no memory of past steps and has no notion of a “program flow” beyond what is encoded in registers and memory.
+** A human operating a calculator: each key press transforms the display based solely on the current value and the operation; the calculator does not “know” the sequence of previous keys.
+** A CPU logically (according to its contract) does the same: it fetches an instruction, reads registers and memory, updates them, and then forgets everything except the new state. The CPU has no concept of “program” – only state transformation.
+
+- **Level 2** is the sequential machine contract (ISA) that *preserves order* across steps. It abstracts away the fact that each step is stateless; it gives the illusion of a linear, ordered execution. Processors implement this contract, but internally they may execute speculatively and out‑of‑order – as long as the observable sequential semantics are preserved.
+
+We do not model hardware microarchitecture because silicon already interprets Level 2; Level 1 execution is handled transparently by the hardware’s state‑update machinery.
+
+**Compilation targets Level 2** because it is the lowest layer where sequential reasoning is preserved and portable across microarchitectures. Higher‑level abstractions (structs, procedures, interfaces, polymorphism) are erased to Level 2 because machines do not need reasoning boundaries: they need a predictable, sequential substrate. The hardware then further erases *instruction order* at the physical level, but the ISA contract guarantees that the programmer sees sequential behavior.
+
+This boundary explains why optimization often means erasing higher‑level reasoning: we trade human‑comprehensible structure for machine‑executable efficiency. The framework’s diagnostic power lies in identifying *when* erasure crosses into structural debt: when the erased boundary was necessary for local reasoning, testability, or compositional safety.
+====
 
 === Connection Level 3. Structured
 
@@ -220,7 +254,7 @@ This reconstructed graph representation is used when programmers reason about th
 
 If a concept has no outgoing links, all conclusions about it are drawn locally. The simplest example of such a concept is a value literal like `42`. We do not need to refer to anything else when drawing conclusions about this node.
 
-Such nodes are usually terminal nodes in the reasoning process because, when reached, we cannot go anywhere—we can only examine the node itself and bring reasoning results back when returning to the previous reasoning step.
+Such nodes are usually terminal nodes in the reasoning process because, when reached, we cannot go anywhere, we can only examine the node itself and bring reasoning results back when returning to the previous reasoning step.
 
 The logic on this level is something like reflex-response. We interact with an item and it changes.
 
@@ -317,7 +351,7 @@ Since we have a single flat graph, when changing program behavior, we can only a
 
 === Level 3. Structured Concepts, First-Order Logic
 
-Structured links add an additional element to name interpretation—a context. One of the simplest things is a local variable. To understand what it could contain, we need to understand the current stack frame. In the case of recursive calls, the variable value could be different for different stack frames. Let's consider a simple recursive factorial function in C:
+Structured links add a new element to name interpretation: a context. One of the simplest things is a local variable. To understand what it could contain, we need to understand the current stack frame. In the case of recursive calls, the variable value could be different for different stack frames. Let's consider a simple recursive factorial function in C:
 
 [source,c]
 ----
@@ -434,11 +468,22 @@ void log(Printable p) {
 }
 ----
 
-In C, reasoning about a tagged union scales like `(amount of referrers) * (amount of referred cases)`, because every extraction site must account for all possible variants. In Java, reasoning cost scales like `( (amount of referrers) + (amount of referred cases) ) * (used contract size)`, because the reasoning graph is partitioned: callers reason only up to the interface boundary, and implementers reason from it. Since reasoning cost dominates overall cognitive load, the difference between these approaches stems primarily from reasoning topology rather than syntax or learning overhead.
+When reasoning about a value that can be one of several variants, cognitive cost scales differently depending on the abstraction:
 
-This structural advantage holds for modifications as well. Adding a new variant in C may require visiting every referrer site. In Java, it only requires adding a new class that implements the interface. The caveat is that if the interface violates the Single Responsibility Principle, the `(used contract size)` factor grows, which quickly erodes the partitioning benefit.
+* **Sum type / tagged union (Level 3)**:
+`(number of referrers) × (number of variants)`
+Every extraction site must account for all possible variants.
 
-NOTE: Functional Programming makes single-method objects exceptionally convenient. A single-method object is the second-simplest contract possible, and much of FP's practical power derives from the fact that when cognitive cost scales like `( (amount of referrers) + (amount of referred cases) ) * (used contract size)`, the `(used contract size)` component is kept minimal.
+* **Interface / contract (Level 4)**:
+`((number of referrers) + (number of variants)) × (used contract size)`
+Callers reason only up to the interface boundary; implementers reason from it.
+
+Since reasoning cost dominates overall cognitive load, the difference between these approaches stems primarily from *reasoning topology* rather than syntax or learning overhead.
+
+[NOTE]
+====
+Functional Programming makes single-method objects exceptionally convenient. A single-method object is the second-simplest contract possible, and much of FP's practical power derives from the fact that when cognitive cost scales like `((referrers) + (variants)) × (contract_size)`, the `(contract_size)` component is kept minimal.
+====
 
 This happens because we include a type into reasoning steps. Considering that https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence[a type corresponds to a formula] in the logic, and we use formula as parameter to another formula, this promotes our reasoning logic to the higher-order logic.
 
@@ -448,16 +493,16 @@ Generally, cases of interfaces or function types in functional languages, repres
 * `a => b` -- function reference type
 
 The type equivalence could be defined as the following:
-[code]
+[source,text,role=conceptual]
 ----
 A => B = exists T, ((T x A) -> B) x T
 ----
 
 Then invocation will look like the following:
 
-[code]
+[source,text,role=conceptual]
 ----
-appy_ref f : (A => B) a : A = let =
+apply_ref f : (A => B) a : A = let =
     open f as t with
         apply_ptr (first t) (pair (second t) a)
 ----
@@ -469,43 +514,47 @@ Generics represents "forall" types, the example with `max` above uses generics, 
 To sum it up, at level 4, the reasoning cost has improved further. At level 3, we are able to reason by induction by source tree. At level 4, we do not need to reason on the entire tree, we can split reasoning process up to some checkpoints, where some formal criteria are specified. The key to the reasoning process is in selecting such suitable formal criteria (interfaces, generics, and so on). Choosing the wrong criteria might increase cost of reasoning instead.
 
 ==== SOLID Principles
-
 Let's check principles of https://en.wikipedia.org/wiki/SOLID[SOLID] from this point of view.
 
 ===== Single Responsibility Principle
-
 [quote]
 There should never be more than one reason for a class to change.
 
 This principle states that class should be responsible for one thing. If there are multiple things the class is responsible for, then when reasoning about the class behavior we need to consider interactions of these responsibilities. For example, when changing some behavior, we need to consider all responsibilities of the class. Thus, we have multiplicative cost of change in the worst case.
 
-===== Open–Closed Principle
+**Framework interpretation**: Isolating responsibilities partitions the reasoning graph, converting multiplicative interaction cost into additive cost.
 
+===== Open–Closed Principle
 [quote]
 Software entities ... should be open for extension, but closed for modification.
 
 This is about boundaries in the components. For good OO design, we need to consider components as black boxes, so interact with them using formal criteria formulated at the boundary. Modification is about crossing this boundary, and doing things beyond formal criteria.
 
-===== Liskov Substitution Principle
+**Framework interpretation**: Boundaries stop reasoning traversal. Extension happens by adding new implementations to the existing contract, preserving the caller's reasoning scope.
 
+===== Liskov Substitution Principle
 [quote]
 Functions that use pointers or references to base classes must be able to use objects of derived classes without knowing it.
 
 This is obvious. Components that depend on the contract should just use that contract and not care how this contract is implemented. If we start to care who implements contract, we convert additive cost of reasoning back to multiplicative cost.
 
-===== Interface Segregation Principle
+**Framework interpretation**: Contract adherence guarantees that substituting implementations does not expand the caller's reasoning scope. Violations force path tracing through concrete types.
 
+===== Interface Segregation Principle
 [quote]
 Clients should not be forced to depend upon interfaces that they do not use.
 
 This is also interesting. When defining contract boundaries, the contract size increases cost of reasoning for both client and service. Client knows about things that it does not care about, so when reasoning change we at least need to view them to understand whether they are relevant. The service needs to implement things, that some client need and other do not need, so it will be a tax on implementing component later.
 
-===== Dependency Inversion Principle
+**Framework interpretation**: Minimizing contract size directly minimizes the reasoning tax. Unused methods force the client to view and mentally filter them, polluting the cognitive context.
 
+===== Dependency Inversion Principle
 [quote]
 The Dependency inversion principle (DIP) states to depend upon abstractions, not concretes.
 
 The more abstract contract is, the more flexibility in implementation of the contract we have.
+
+**Framework interpretation**: Abstract contracts decouple reasoning from implementation details. The caller reasons up to the interface; the implementer reasons from it. This partitioning is the core mechanism that reduces cognitive scaling cost.
 
 ===== Cost of SOLID
 
@@ -519,7 +568,7 @@ While higher levels reduce cognitive complexity growth, they also increase the i
 
 This was demonstrated by Java language. Objects are higher-level constructs than structs and unions. And objects are formally more generic, and structs and unions could be expressed using objects. However, objects (a level 4 entities) have higher cognitive cost than structs and unions (a level 3 entities).
 
-The community first addressed the problem by adopting 'anemic' POJO as a pattern that was later supported by tools like Lombok. POJO were often critiqued as non-true OOP from theoretical point of view. The later records and sealed types were added to Java, so level 3 types were directly supported with simplified and lower-cost level 3 reasoning where it makes sense.
+The community first addressed the problem by adopting 'anemic' POJOs as a pattern that was later supported by tools like Lombok. POJOs were often critiqued as non-true OOP from theoretical point of view. The later records and sealed types were added to Java, so level 3 types were directly supported with simplified and lower-cost level 3 reasoning where it makes sense.
 
 There is a famous quote:
 
@@ -539,15 +588,24 @@ The most a high-level language can do is to furnish all the constructs the progr
 Moreover, at some point the elaboration of a high-level language becomes a burden that increases, not reduces, the intellectual task of the user who rarely uses the esoteric constructs.
 ____
 
-This is the point where I disagree with F. Brooks. The higher level languages affect cognitive scaling. They have lower growth of the cognitive complexity with the growth of the behavior complexity. This saving does not come from what are thinking about, but mainly come from what we do not need to think about and still make correct decision about the program.
+This is the point where I disagree with F. Brooks. The higher level languages affect cognitive scaling. They have lower growth of the cognitive complexity with the growth of the behavior complexity. This saving does not come from what we are thinking about, but mainly from what we do not need to think about and still make correct decisions about the program.
 
-For example, for a well-designed interface, we could stop thinking in that direction after examining the interface. We do not need to think about every implementation of this. Also, when implementing interface, we do not need to think about every place that uses it, the interface is a contract, that specifies what we need to do to support all these places.
+For example, for a well-designed interface, we could stop thinking in that direction after examining the interface. We do not need to think about every implementation of this. Also, when implementing an interface, we do not need to think about every place that uses it; the interface is a contract that specifies what we need to do to support all these places.
+
+Higher-level abstractions do reduce code duplication through DRY: generics, interfaces, dependency injection, higher-order functions. And this reduction is often noticeable. However, the reduction is rarely as large as intuitively expected, and abstraction layers sometimes add boilerplate or setup overhead. The hidden cost of DRY is that reducing duplication couples previously independent sites. For some tasks, such as adapting a shared contract, the number of affected locations increases, expanding the reasoning scope and introducing unexpected links. The primary cognitive benefit of abstraction is not simply "less code"; it is scoped reasoning. By partitioning the codebase, abstractions ensure that for most tasks, you only need to examine a bounded subset. Well-designed abstractions maximize the code you safely ignore while keeping coupling explicit and localized.
 
 This could be worked around by implementing higher-level concepts in the lower-level languages as internal DSL. However, it adds reasoning cost as there is a need to reverse-engineer these concepts from the code and many high-level type-checks are missing. The consistency of these constructs also is harder to maintain.
 
 This could be seen on many practical examples, DSLs that implement lambdas are used UI toolkits (window function), virtual tables are used in operating systems like Linux for drivers and files. They demonstrate that FP and OOP programming in C is possible, but they also demonstrate that it is cumbersome and error-prone.
 
-Therefore, there is no silver bullet indeed. However, the higher level languages provide more heavy ammunition. It is more difficult to handle, but it could destroy more difficult targets. The primary benefit of high-level languages is not an immediate cost saving, but the ability to implement applications with more complex behavior. The lower-level languages fail earlier than higher-level languages.
+**Brooks was right, but incomplete**. There is no silver bullet: no single development promises an order-of-magnitude improvement in productivity *for all tasks*. However, higher-level languages provide **heavier ammunition**, which is more difficult to handle and requires more sophisticated tooling, but can solve problems that lower-level languages cannot sustain.
+
+The primary benefit of high-level languages is not immediate cost saving, but the ability to implement applications with more complex behavior *before* cognitive load becomes unmanageable. Lower-level languages fail earlier; higher-level languages extend the horizon.
+
+[NOTE]
+====
+**Optimization as Level Descent**: Performance tuning is fundamentally a process of erasing higher-level reasoning boundaries to align with lower-level execution semantics. This is not inherently negative: erasure is how we pay for speed. The framework's diagnostic power lies in identifying *when* erasure crosses into structural debt: when the erased boundary was necessary for local reasoning, testability, or compositional safety. The goal is not to preserve all levels at runtime, but to erase them at the right compilation stage, with the right policy.
+====
 
 == Language Levels
 
@@ -567,6 +625,11 @@ If we consider cognitive scalability, we need to understand which concepts are o
 | Java, C#, {cpp} | 4 - Formal | OOFP | Interfaces, Classes, Methods
 | Haskell, OCaml | 4 - Formal | FOOP | Functions, Type Classes, Data Types
 |===
+
+[NOTE]
+====
+**Functional Programming as a bridge**: Pure FP can be viewed as a transitional stage between structured programming and OOP/FP hybrids. It excels at formalizing Level 3 constructs (algebraic data types, pattern matching) and introduces Level 4 reasoning via higher-order functions. However, its treatment of existential types (interfaces) is often less ergonomic than OOP's, which is why mainstream languages tend toward hybrid models. This is not a failure of FP, it is evidence that language evolution is driven by *practical reasoning ergonomics*, not theoretical purity.
+====
 
 Concepts on the growth path are important, because they directly affect how we are reason about the program. With each added node, it is more complex to understand and modify code. And the way the nodes are connected shapes possible reasoning about the code.
 
@@ -596,21 +659,21 @@ This example shows, that we need to consider links on the growth path, rather th
 | Higher-order logic
 |===
 
-Some modern languages deliberately blend levels for pragmatic reasons. Go restricts Level 4 features (restricted inheritance, limited generics initially) to keep it readable, accepting higher boilerplate for predictable scaling. However, Go has enough level 4 features still to be classified as a level 4 language.
+Some modern languages deliberately blend levels for pragmatic reasons. Go restricts classical inheritance in favor of interface composition and struct embedding, keeping the growth path focused on Level 4 contracts rather than hierarchy traversal. Generics were added later (1.18) to support universal quantification without compromising readability.
 
-NOTE: A language's abstraction level defines the *ceiling* of cognitive scalability for idiomatic usage, not a mandatory coding style. You can write level 3 procedural code in a level 4 language like Java, but attempting to reason beyond that ceiling requires emulating higher‑level constructs through frameworks or conventions — which merely shifts the cognitive mapping cost back to the developer. This means: choose a language whose ceiling comfortably exceeds your anticipated complexity, then progressively adopt its native higher‑level constructs *as the growth path demands*.
+NOTE: A language's abstraction level defines the *ceiling* of cognitive scalability for idiomatic usage, not a mandatory coding style. You can write level 3 procedural code in a level 4 language like Java, but attempting to reason beyond that ceiling requires emulating higher‑level constructs through frameworks or conventions, which merely shifts the cognitive mapping cost back to the developer. This means: choose a language whose ceiling comfortably exceeds your anticipated complexity, then progressively adopt its native higher‑level constructs *as the growth path demands*.
 
-=== Level 1 Language
+=== Level 0. Human-Executed Programs
+Before any external automation, computation is defined by an algorithm: a sequence of instructions designed for a human to execute. The term "algorithm" itself originates from the work of Arabic mathematicians to describe such human-executed procedures, much like a culinary recipe describes a process for a chef. In this stage, there is no separation between algorithm and executor; the human mind holds both the state and performs the operations.
 
-The classification suggests that there should be some degenerate case of level 1 programming languages that is centered around a single value that does not have outgoing connection.
+The modern analogue is mentally calculating a complex formula or tracing a small algorithm on paper without executing it. Level 0 establishes the concept of the stored algorithm: the separation of "instructions" from "data" exists, but the execution engine is biological, not mechanical.
 
-Such language should still control a computing system.
+=== Level 1. Calculator Paradigm
+The transition from Level 0 to Level 1 occurs when we invent a device that can execute specific operations of the algorithm.
 
-Such language could not have a sequence of steps, because sequence of steps is already a level 2 concept. So organization of steps should be done by a programmer in his/her mind, and system with a level 1 language should just change the state when steps are executed by an operator.
+In Level 0, the human acts as the CPU, ALU, and Control Unit. In Level 1, the human remains the Control Unit: sequencing steps and managing data, but the ALU is offloaded to a mechanical or electronic device. The "program" is still largely in the human's mind, but the steps are no longer mental calculations; they are physical interactions with a state-transforming machine.
 
-And there is a language that seems to conform to it. It is the language of the simple non-programmable calculator. Each key press modifies the state of calculator. But user still works with a single value on the screen. There are hidden registers for binary operators, but it is possible to see only a single value on the screen and work with only a single value.
-
-I'll call this paradigm 'calculator', and it is here mostly for completeness.
+The language of the simple non-programmable calculator conforms to this paradigm: each key press modifies the state, but the user still works with a single value on the screen. I include this paradigm mostly for completeness.
 
 === Non-mainstream Paradigms and DSLs
 
@@ -620,7 +683,7 @@ The prolog data type is term that have functor (just a string with some equality
 
 So Prolog is a level 3 language.
 
-Prolog was promoted as a general purpose language and replacement for the mainstream languages of that time. This did not work for a number of reasons. I think that primary reason was that as a level 3 language, it did not provided expected productivity boost because its cognitive scalability curve was about the same as the curve structured programming languages like C or Pascal. Even somewhat worse because it was a dynamically-typed language (see more later at <<dynamic-typing>>). And the task of finding solutions over finite domains does not happen that often in practice to offset usability and performance problems added in other areas. So Prolog is more like a side story of programming language evolution rather than a continuation of the main line of general purpose programming languages.
+Prolog was promoted as a general purpose language and replacement for the mainstream languages of that time. This did not work for a number of reasons. I think that primary reason was that as a level 3 language, it did not provide expected productivity boost because its cognitive scalability curve was about the same as the curve structured programming languages like C or Pascal. Even somewhat worse because it was a dynamically-typed language (see more later at <<dynamic-typing>>). And the task of finding solutions over finite domains does not happen that often in practice to offset usability and performance problems added in other areas. So Prolog is more like a side story of programming language evolution rather than a continuation of the main line of general purpose programming languages.
 
 NOTE: One of the current attempt at logic programming is https://en.wikipedia.org/wiki/Verse_(programming_language)[Verse]. It looks like a level 4 language, and it is unlikely that this language will produce a significant productivity boost comparing with a good level 4 languages like Kotlin. I lack domain experience to understand if it is good for niche uses like gamedev, but I do not see why I would want to switch to it from Java for modern enterprise applications.
 
@@ -654,7 +717,7 @@ So, level 3 languages add new structures that organize statements and global var
 
 === Level 4
 
-The transition from level 3 to level 4 is harder to pinpoint. OOP itself was first implemented a long ago, starting with https://en.wikipedia.org/wiki/Simula[Simula] (1962). FP has long history as well starting with https://en.wikipedia.org/wiki/Lisp_(programming_language)[Lisp] (1960). However, {cpp} was probably the first truly mainstream OOP language. For statical-typed languages, Java, C# and Go are current mainstream OOP languages in addition to {cpp}. For dynamically-typed, JavaScript and Python are top contenders, but python has found a big nice, and JavaScript is because of browsers.
+The transition from level 3 to level 4 is harder to pinpoint. OOP itself was first implemented a long ago, starting with https://en.wikipedia.org/wiki/Simula[Simula] (1962). FP has long history as well starting with https://en.wikipedia.org/wiki/Lisp_(programming_language)[Lisp] (1960). However, {cpp} was probably the first truly mainstream OOP language. For statically-typed languages, Java, C# and Go are current mainstream OOP languages in addition to {cpp}. For dynamically-typed, JavaScript and Python are top contenders, but Python has found a big niche, and JavaScript is because of browsers.
 
 Level 4 corresponds to https://en.wikipedia.org/wiki/Higher-order_logic[higher-order logic], that adds quantification over predicates (types). That corresponds to quantification over types in a programming languages. The core features of level 4 are 'existential' and 'forall' types.
 
@@ -662,9 +725,23 @@ The existential quantification corresponds to function types, interfaces, and ab
 
 The universal quantification corresponds to generic types. Most of level 4 statically-typed languages support generics. However, for some reason, popular languages like {cpp}, C#, Go, and Java started without generics in the first versions. Generics were added to them at some later versions. This caused inconsistencies and duplications in standard libraries. {cpp} case is understandable, because it was one of the first widely used OOP languages. For others, reason skipping generics is harder to understand. There seems to be logical inevitability of adding generics, because `forall` quantification is really important for reasoning in higher-order logic.
 
-While FP and OOP belong to level 4, there were a number of code generator, marcos, and design patterns that supported it in level 3 languages. For example, the most of C-based UI toolkits implement something poor-man lambdas using function pointer with void pointer to implement handling of events for windows. https://en.wikipedia.org/wiki/IBM_System_Object_Model[IBM SOM] and https://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture[CORBA] code generators generated C code that implements and invokes interfaces. {cpp} actually started as https://en.wikipedia.org/wiki/Cfront[external DSL that compiled to C code]. Unix file handles and everything-is-a-file are actually example of interface concept implemented as a design pattern. For more examples, see https://www.cs.rit.edu/~ats/books/ooc.pdf[Object-Oriented Programming With ANSI-C] by Axel-Tobias Schreiner.
+While FP and OOP belong to level 4, there were a number of code generator, macros, and design patterns that supported it in level 3 languages. For example, the most of C-based UI toolkits implement something poor-man lambdas using function pointer with void pointer to implement handling of events for windows. https://en.wikipedia.org/wiki/IBM_System_Object_Model[IBM SOM] and https://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture[CORBA] code generators generated C code that implements and invokes interfaces. {cpp} began as 'C with Classes' (1979), a general-purpose language extension to C. Its first implementation, Cfront, was a source-to-source compiler that translated {cpp} code to C for portability and bootstrapping—a technique later common in DSL toolchains, though C++ itself was never domain-specific. Unix file handles and everything-is-a-file are actually example of interface concept implemented as a design pattern. For more examples, see https://www.cs.rit.edu/~ats/books/ooc.pdf[Object-Oriented Programming With ANSI-C] by Axel-Tobias Schreiner.
 
 For level 4 languages, we see that they generally use level 3 constructs and add new organizing concepts over them. An object and function reference from FP is a new concept build over structs and functions. Comparing with structured languages, more things are offloaded to the code.
+
+=== Compilation as Controlled Level Descent
+
+Higher abstraction level is *erased* during compilation to lower levels to enable execution:
+
+* Level 4 objects, interfaces, and dependency contracts → Level 3 IR (SSA, control flow graphs)
+* Level 3 structured composition → Level 2 machine code (flat addresses, explicit registers, sequential control flow)
+* Level 2 machine code → Level 1 execution (parallel, state-driven, order-erased by hardware)
+
+Compilation stops at Level 2 because processors are interpreters of the ISA contract. Translating further to Level 1 would mean executing instructions one by one in the mind – which is precisely what we offloaded to machines in the first place.
+
+*Erasure is not loss, it is the mechanism by which we ground our description of computation*. The source code contains guidelines necessary for human reasoning (local scope, compositional contracts, polymorphic dispatch), the compilation process uses these constructs as scaffolding to create executable code.
+
+This explains why "optimization" often feels like losing abstraction: inlining erases Level 4 composition into Level 3 control flow; monomorphization erases Level 4 polymorphism into Level 2 concrete dispatch; loop unrolling erases Level 3 iteration into Level 2 parallel instructions. The tension between human reasoning and machine execution is structural, not accidental.
 
 === Primary Evolution Vector
 
@@ -713,7 +790,7 @@ This is because the answer was "dependency injection".
 * [*] The concept of the next level are actually used in the languages of the previous level, but they are natively supported. And developers use design patterns, whitespaces, comments, code generators, macros, or other means to support them.
 ** Many OOP languages have some DI frameworks, but most of them require some kind of compiler (for example, Dagger 2) or interpreter (for example, Spring Framework) to work. These compilers and interpreters perform non-trivial analysis of the code to make things to work, and they require additional support from IDE to check things.
 
-* [*] These concepts start to be used, because they really help to fight complexity. So, more the complex domain is, them more likely that concepts will appear. And using these concepts on the previous level is considered as example of a good design.
+* [*] These concepts start to be used, because they really help to fight complexity. So, more the complex domain is, the more likely that concepts will appear. And using these concepts on the previous level is considered as example of a good design.
 ** DI is used to fight complexity.
 
 * [*] These concepts are general-purpose, so they are applied independently of the domain.
@@ -764,6 +841,20 @@ Dagger 2 also uses Java as a substrate to define own DSL that is compiled back t
 
 Level 5 languages provide *native* support for holon (system) composition as a first-class language feature, rather than requiring external frameworks that provide DSL upon OOP language. This means the compiler can perform static checks on system composition, rather than relying on runtime interpretation or compiler extension.
 
+
+The `ApplicationContext` can technically be instantiated multiple times. For example, in parent-child hierarchies or test suites, but it lacks true compositional isolation. Parent-child contexts form a leaky hierarchy where child contexts resolve missing beans from parents, preventing independent subsystem reasoning. Most beans are JVM-wide singletons, so multiple contexts often inadvertently share state or configuration. This is not a limitation of instantiation; it is a limitation of compositional semantics. Spring introduces Level 5 wiring but restricts it to a Level 2 reasoning topology. Developers must trace dependencies across a globally shared resolution space, causing O(N²) interaction complexity.
+
+
+=== Why Isn't Level 5 Here Yet?
+Several factors delay the adoption of native holon composition:
+
+* **Primordial Soup inertia**: Existing DI frameworks work *well enough* with hacks and conventions. Rewriting them with compile-time guarantees requires breaking compatibility.
+* **Perceived mundanity**: Dependency injection looks "too simple" to be a new paradigm. But so did structured programming in 1968.
+* **Complexity pressure threshold**: Academic projects rarely reach the scale where Level 5 benefits become obvious. Industry projects do, but are locked into existing ecosystems, which are perceived as "normal".
+* **Incremental adoption path**: A clean-slate Level 5 language requires a migration strategy. However, as we could learn from Java language experience, higher level languages, should support lower levels constructs well, so level 5 language must be a good level 4 language.
+
+The transition will resemble the move from OOP-in-C to OOP-in-C++: implicit constructs, macro-based DSLs, and design patterns gradually replaced by explicit language features.
+
 [#l5-example]
 === Example of system/holon-oriented language
 
@@ -799,9 +890,9 @@ holon class ClientDao with { @TransactionAware } as {
 };
 ----
 
-The line `in JdbcTemplate;` is shortcut for `in val jdbcTemplate : JdbcTemplate`. However, 99% of names used in component for DI match name of type. So providing explicit name for dependency is an exception. `@TransactionAware` is aspect packages external dependencies and such aspect convert kind of converts dependency to component feature.
+The line `in JdbcTemplate;` is shortcut for `in val jdbcTemplate : JdbcTemplate`. However, 99% of names used in a component for DI match the name of the type. So providing explicit name for dependency is an exception. `@TransactionAware` is aspect packages external dependencies and such aspect convert kind of converts dependency to component feature.
 
-The module the provides multiple DAO components might look like the following:
+The module that provides multiple DAO components might look like the following:
 
 [source,l5]
 ----
@@ -838,19 +929,19 @@ holon class MyEditPlugin with {
     MyFileSupport(); // some local components
     // the action contributes to "out List<ActionRegistration>"
     // <> - is a binary operator that specifies that the next block is holon-lambda
-    // used as the last agument of function
+    // used as the last argument of the function
     actionManager.action(#name "EditMyFile") <> {
-        // this holon-lambda implments `facet { in ActionContext; out Action; }`
-        // action that uses components from lexical scope,
+        // this holon-lambda implements `facet { in ActionContext; out Action; }`
+        // action that uses components from the lexical scope,
         // it is lazily executed by action manager
-        // in ActionContext is provided from facet type implicitly
+        // in ActionContext is provided by the facet type implicitly
         out EditMyFileAction();
     }
 }
 // "facet {  in ActionContext; out Action; }" is something like the following
 // However, some form of genercis will be used for it
 holon trait GeneratedFacetType {
-    // out-function that return result and depends on ActionContext;
+    // out-function that returns a result and depends on ActionContext;
     out fn apply() : Result with {
         // because it is signature affecting, it is specified in "with" section
         in ActionContext;
@@ -866,7 +957,7 @@ See more examples in link:../02-holon-composition/HolonComposition.adoc[Report o
 
 === New Link Type and New Reasoning Type
 
-There is a new link type adds environment as intermediate. When interacting between nodes, both refer to environment. One contributes to environment, other consumes from it. Environment generally could transform contribution, so consumed and contributed types could be different. If we consider links levels previously, a new link type is added:
+A new link type adds environment as intermediate. When interacting between nodes, both refer to environment. One contributes to environment, other consumes from it. Environment generally could transform contribution, so consumed and contributed types could be different. If we consider links levels previously, a new link type is added:
 
 1. Value
 2. Name -> Value
@@ -948,7 +1039,7 @@ Even worse, if we package this as a reusable component, and the application that
 
 === Deprecated Elements
 
-New level also deprecates some elements or makes then unfashionable. Like `GO TO` was deprecated in structured languages.
+New level also deprecates some elements or makes them unfashionable. Like `GO TO` was deprecated in structured languages.
 
 I expect the following OOP elements to be deprecated:
 
@@ -965,7 +1056,7 @@ I think that during compilation process there will be at least one intermediate 
 * structured intermediate code for dataflow and control flow analysis that might have virtual calls inlined
 * and finally LLVM, MLIR, WASM, or some alternative for generating final machine code.
 
-Experience shows that effective linking can only occur at the level as the language itself. For {cpp} it took a lot of time to create ABI. If we try to link on the lower level concepts, different issues will occur and some link-time optimizations will not be possible. Aspects will make this particularly acute.
+Experience shows that effective linking can only occur at the same level as the language itself. For {cpp} it took a lot of time to create ABI. If we try to link on the lower level concepts, different issues will occur and some link-time optimizations will not be possible. Aspects will make this particularly acute.
 
 So, I think we should give up on packaging code in standard OS shared libraries and just distribute some form of level 5 intermediate code (like Java or .NET), or even just source as in the case of Go. The machine code could be created by AOT and linkers, or by JIT compilers. Some restricted platforms like game consoles require AOT compilation for all code, so such scenario should be considered in the compilation process design. OS-specific shared libraries could be a compilation target and used as deployment format, but making them development time format might be problematic.
 
@@ -1067,13 +1158,18 @@ The goal of this step is measuring level of the links identifying on this previo
 
 For example, In a 50k LOC C codebase, cognitive load grows with the number of global functions and struct definitions (Level 3 connections). In an equivalent Java codebase, load scales with interfaces, dependency graphs, and generic contracts (Level 4 connections).
 
-For example, the statements are abstractions on the growth path for unstructured BASIC and FORTRAN 66, because the program usually grows by adding global statements. However, for Visual BASIC and FORTRAN 77, statements are mostly contained in procedures and functions, so whey reasoning about the program we could analyze the entire procedure and save assertions about it, ignoring statement content after reaching to the conclusion.
+For example, the statements are abstractions on the growth path for unstructured BASIC and FORTRAN 66, because the program usually grows by adding global statements. However, for Visual BASIC and FORTRAN 77, statements are mostly contained in procedures and functions, so when reasoning about the program we could analyze the entire procedure and save assertions about it, ignoring statement content after reaching to the conclusion.
 
 The 'growth path' isn't derived from language specs, but from what has demonstrably scaled in practice. This keeps the framework anchored to engineering reality rather than formal semantics.
 
 ==== Overall Level
 
-The last step is checking that reasoning that corresponds to the specific level is possible using identified links and concepts and this level of reasoning is applicable to idiomatic programs. It is also a good point to check the completeness of the level. For example, FORTRAN 66 had procedures, but it did not support not recursion. Only, FORTRAN 90 finally officially enabled recursion with 'RECURSIVE' keyword. And only FORTRAN 2018 made procedures recursive-capable by default.
+The last step is checking that reasoning that corresponds to the specific level is possible using identified links and concepts and this level of reasoning is applicable to idiomatic programs. It is also a good point to check the completeness of the level. For example, FORTRAN 66 had procedures, but it did not support recursion. Only, FORTRAN 90 finally officially enabled recursion with 'RECURSIVE' keyword. And only FORTRAN 2018 made procedures recursive-capable by default.
+
+[NOTE]
+====
+**Diagnostic Question**: When evaluating a language or technology, ask: *"Is this abstraction meant to scale human reasoning (keep at Level 3+), or optimize machine execution (erase to Level 2)?"* If a feature forces Level 1/2 reasoning on complex domains (manual state tracking, flat global scope, copy-pasted logic), cognitive load will grow fast. If it supports Level 3+ composition with hierarchical structure and/or explicit contracts, reasoning scales more gradually. This boundary condition explains why compilation stops at machine code, why optimization erases abstraction, and why the tension between human reasoning and machine execution is structural, not accidental.
+====
 
 === Issues with Measuring Procedure
 
@@ -1105,7 +1201,7 @@ However, it might happen that there is a mix of different levels on the growth p
 
 == Level 6 and Later
 
-The proposal that system/holon-oriented programming is the next level of the programming languages might look stretched at the first sight. However, I tried to refute it for many years, and I still have not found anything else to replace it or supersede it as a more generic mechanism. I think that something "language-integrated dependency injection" will eventually sneak into both new and old languages. and there will be finally hope to understand what will be a new level 6. There will be some abstractions that will use holons as lower-level building blocks, and there will be even the better tools to manage complexity of software.
+The proposal that system/holon-oriented programming is the next level of the programming languages might look stretched at the first sight. However, I tried to refute it for many years, and I still have not found anything else to replace it or supersede it as a more generic mechanism. I think that something "language-integrated dependency injection" will eventually sneak into both new and old languages. and there will finally be hope to understand what will be a new level 6. There will be some abstractions that will use holons as lower-level building blocks, and there will be even the better tools to manage complexity of software.
 
 Before that happens a lot of good and bad holon-oriented programs will be written. This is needed to understand what is a good holon-oriented programming. The good holon-oriented programming will contain seeds of level 6. However, these seeds will appear only when we as software developers will encounter complexity challenges where holon-oriented languages will fail to provide adequate complexity management tools.
 
@@ -1125,7 +1221,9 @@ More interesting example is adding garbage collection to the language. This is a
 
 The language innovation happens in many directions, and horizontal evolution could bring a noticeable domain-specific productivity boost at the cost of losing some general-purpose applicability.
 
-Within a single level, languages also evolve to adopt more compact notation for frequently used features. For example, many current OOP languages adopted FP-like syntax for single-method objects. While it does not add a new way of reasoning, it enables to use OOP in scenarios where it was too verbose before. So, so such small-scale evolution reduces cost of reasoning as well.
+Within a single level, languages also evolve to adopt more compact notation for frequently used features. For example, many current OOP languages adopted FP-like syntax for single-method objects. While it does not add a new way of reasoning, it enables to use OOP in scenarios where it was too verbose before. So such small-scale evolution reduces cost of reasoning as well.
+
+Abstraction level predicts cognitive scalability only when matched to the right complexity type. Haskell's Level 4 constructs (algebraic data types, monadic effects) excel at compiler-like structural complexity but offer no advantage for stateful, integration-heavy data-entry tasks. This is not a failure of Level 4. It is evidence that languages evolve under specific domain pressure, and their growth-path abstractions reflect the complexity they were built to face. A Level 5 language for enterprise systems must address system composition and lifecycle management; a Level 5 language for proof engineering must address theory dependencies and proof reuse. The level is necessary but not sufficient for domain fit.
 
 The extreme case of horizontal development is DSLs that lose general-purpose computation capability but provide good abstractions for some specific domain. However, these languages consists of some concepts that are connected to each other. The level of these concepts and the level of connections will also define the way we reason about the language and its cognitive scalability. For example, BPMN is a level 2 language with some level 3 elements. It has quite poor cognitive scaling as a result. For example, quote from report on BPMN indicate this:
 
@@ -1150,7 +1248,7 @@ In this article, I've tried to demonstrate that the abstraction levels of progra
 
 This framework can provide valuable lens for understanding language evolution. By focusing on connection types rather than paradigms, we can semi-formally identify when a language truly represents a new level of abstraction. The key insight is that each new level reduces cognitive complexity growth by adding a new way to reason about programs without needing to consider all details at once.
 
-*Practical takeaway*: Use the framework diagnostically — if maintenance costs grow non‑linearly, check whether you've exhausted your language's growth‑path abstractions or whether a higher‑ceiling language would better sustain long‑term maintainability.
+*Practical takeaway*: Use the framework diagnostically, if maintenance costs grow non‑linearly, check whether you've exhausted your language's growth‑path abstractions or whether a higher‑ceiling language would better sustain long‑term maintainability.
 
 Caveats on using the scale:
 
@@ -1160,25 +1258,27 @@ Caveats on using the scale:
 
 The transition to level 5 (holon-oriented programming) will be significant, but it must be implemented as a core language feature rather than an external framework to provide the full benefits of reduced cognitive complexity.
 
+*Foundational boundary*: Level 2 is the lowest layer where sequential reasoning is preserved; Level 1 is direct human execution or hardware interpretation that erases order for performance (see https://en.wikipedia.org/wiki/Computer_(occupation)[Computer (occupation)]). All higher levels exist to lift humans out of Level 2 (or manual state tracking at Level 1). When languages, databases, or proof assistants force Level 1/2 reasoning on complex domains, cognitive load grows fast. When they support Level 3+ composition with explicit contracts, reasoning cost scales more gradually. This boundary condition explains why compilation stops at machine code, why optimization erases abstraction, and why the tension between human reasoning and machine execution is structural, not accidental.
+
 == Glossary
 
 Abbreviations used:
 
-* AOP – Aspect‑Oriented Programming
-* DI – Dependency Injection
-* DSL – Domain‑Specific Language
-* FP – Functional Programming
-* HOP – Holon‑Oriented Programming
-* LOP – Language‑Oriented Programming
-* OOP – Object‑Oriented Programming
-* SOP – System‑Oriented Programming.
+* AOP: Aspect‑Oriented Programming
+* DI: Dependency Injection
+* DSL: Domain‑Specific Language
+* FP: Functional Programming
+* HOP: Holon‑Oriented Programming
+* LOP: Language‑Oriented Programming
+* OOP: Object‑Oriented Programming
+* SOP: System‑Oriented Programming.
 
 [appendix]
 == Connection to Developmental Psychology
 
-The research actually inspired by some parallels between a programming language groups and stages in https://en.wikipedia.org/wiki/Piaget%27s_theory_of_cognitive_development[J. Piaget's theory of cognitive development]. Later https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[Model of hierarchical complexity by M. Commons] was added to the mix. While J. Piaget considered development of human reasoning as whole, M. Commons noticed that advancement by stages is uneven in different domains.
+The research was initially inspired by observed parallels between programming language groups and stages in https://en.wikipedia.org/wiki/Piaget%27s_theory_of_cognitive_development[J. Piaget's theory of cognitive development]. Later, the https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[Model of hierarchical complexity by M. Commons] was added to the mix. While J. Piaget considered the development of human reasoning as a whole, M. Commons noted that advancement through stages is uneven across different domains.
 
-These models were major inspiration for me to go into detailed analysis of the basic constructs in the programming languages.
+These models served as a **discovery heuristic** that guided the initial search for connection types and reasoning boundaries. However, developmental psychology is descriptive and bound to human maturation; it does not provide formal or empirical validation for language design. The framework extracts the abstract progression of reasoning complexity from those models and rebuilds it on programming semantics and connection topology. The levels stand on their technical merits; the psychological references remain a short side note documenting the origin of the idea.
 
 [cols="1,3,3,2,5"]
 |===
@@ -1196,14 +1296,14 @@ There is quite clear correspondence for the first four stages. So, I think that 
 
 For system-oriented, the correspondence with systematic and metasystematic stages is also quite strong, but there is no complete programming languages for this stage yet. Rich DSL like Spring Framework are closing up, but they are not here yet as it was discussed above.
 
-For paradigmatic and cross-paradigmatic stages, things gets somewhat difficult. I have major doubts about description of these stages given by M.Commons. Examples used in his articles could be interpreted in different ways. However, some wording suggests that language-oriented paradigm might correspond to this stage. However, language-oriented paradigm works on language and source level (compile time), rather than runtime, so it does not look like a continuation of the mainstream evolution line. And LOP using as horizontal rather than vertical development in the language evolution. I also do not think that usefulness of system-oriented paradigm is exhausted enough for the next paradigm to start to appear, but it still could be an interesting area to investigate.
+For paradigmatic and cross-paradigmatic stages, things get somewhat difficult. I have major doubts about description of these stages given by M.Commons. Examples used in his articles could be interpreted in different ways. However, some wording suggests that language-oriented paradigm might correspond to this stage. However, language-oriented paradigm works on language and source level (compile time), rather than runtime, so it does not look like a continuation of the mainstream evolution line. And LOP using as horizontal rather than vertical development in the language evolution. I also do not think that usefulness of system-oriented paradigm is exhausted enough for the next paradigm to start to appear, but it still could be an interesting area to investigate.
 
 Detailed correspondence between paradigms and stages deserves much bigger work than it is possible here, so I leave it here mostly as a short side note.
 
-[appendix]
-== Other Domains
+=== Other Domains
+This article considers concept evolution for complexity management in programming languages. However, the evolution with similar structure could be seen in other domains as well.
 
-This article considers concept evolution for complexity management in programming languages. However, the evolution with similar structure could be seen in other domains as well. The response
+The reason is structural: Level 2 is the universal reasoning substrate. Databases flatten results to tabular rows (Level 2), proof assistants accumulate hypotheses into global contexts (Level 2), and compilers reduce holons to sequential instruction streams (Level 2). Level 1 execution, whether by silicon, a database engine, or a proof kernel, then erases order entirely for performance. Abstraction levels scale human reasoning; lower levels erase it for execution. The tension is structural, not accidental.
 
 === Text Structure
 
@@ -1224,7 +1324,7 @@ The fourth level of text is hypertext where different pieces of text are referen
 The fifth level is wiki where there is a notion of text and environment and even elements of dependency injection. A wiki page consists of elements that interact together, and links are often auto-resolved based on conditions. Wikipedia is likely one of the largest modern textual bodies, and chosen basic abstractions are one of the reasons of its growth. The blog platforms and content aggregators (like Social Media sites) could be also considered as belonging to this stage. They provide a platform for connecting texts together.
 
 [cols="1,3,3,6"]
-!===
+|===
 | Level | Paradigm | Cognitive Stage | Text Type
 
 | 1 | Calculator | Sensorimotor | Signs
@@ -1232,7 +1332,7 @@ The fifth level is wiki where there is a notion of text and environment and even
 | 3 | Structured | Concrete Operations| Structured texts
 | 4 | Formal | Formal Operations| Hypertext
 | 5 | Holon-oriented | Systematic | Wiki, Blogs, Content Aggregators, Social Media
-!===
+|===
 
 As we could see, under quantitative complexity pressure new abstractions were added to support bigger and bigger textual bodies. And the abstraction evolution path under complexity pressure is practically the same as evolution path of programming languages.
 
@@ -1246,12 +1346,12 @@ On the second level, there are https://en.wikipedia.org/wiki/Flat_organization[f
 
 On the third level are traditional https://en.wikipedia.org/wiki/Hierarchical_organization[hierarchical organizations]. Note, that nodes in hierarchy are usually teams rather than individuals. The team is a flat suborganization within hierarchical organization. Also, even at time of monarchy, the nodes in hierarchy were families rather than individuals. So hierarchical organization use flat organizations as building blocks.
 
-On the forth level there are big companies like IBM or Sony that consists of multiple legal entities under single umbrella. Such sub-entities could be of different size, organizational structure (but usually a level 3 organizations), and they interact mostly using contracts rather using command-and-control structure. The legal entities within single organization even could https://www.wired.com/2003/02/sony-4/[have conflicts with each other]. Modern governments are also organized in such structure different departments interact with each other using restricted protocols.
+On the fourth level there are big companies like IBM or Sony that consists of multiple legal entities under single umbrella. Such sub-entities could be of different size, organizational structure (but usually a level 3 organizations), and they interact mostly using contracts rather using command-and-control structure. The legal entities within single organization even could https://www.wired.com/2003/02/sony-4/[have conflicts with each other]. Modern governments are also organized in such structure different departments interact with each other using restricted protocols.
 
 The fifth level is where different entities are responsible for parts of the single process. The relationship is more like cooperative work, rather than supply chain relationship like on the previous level. This level is just recently appeared, but there are already interesting examples. The "as-service" services like cloud providers implement some aspect like software, infrastructure, manufacturing, or data processing to implement some process with other organization. They inject some dependencies into process needed by other organization so overall process is a split responsibility of two or more organizations. Cloud providers provide hardware (with recovery from failures), databases, traffic management, etc. Chip Foundries like TSMC provide configurable manufacturing process to other organizations. Uber provides environment where drivers and passengers are connected. The difference from supply chain is that responsibility boundary is horizontal within process rather than vertical between processes.
 
 [cols="1,3,3,6"]
-!===
+|===
 | Level | Paradigm | Cognitive Stage | Organization Type
 
 | 1 | Calculator | Sensorimotor | Individual
@@ -1259,9 +1359,78 @@ The fifth level is where different entities are responsible for parts of the sin
 | 3 | Structured | Concrete Operations| Hierarchical Organizations
 | 4 | Formal | Formal Operations| Multi-divisional structure (Sony, IBM, etc.)
 | 5 | Holon-oriented | Systematic | *-as-Service Organizations (TSMC, Yandex, Amazon, etc.)
-!===
+|===
 
 As it could be seen, the organizations evolved using the same path. And they also evolved under complexity pressure over time, by implementing more complex abstractions. Presence of this evolution vector in other domains cross-validates the programming language evolution vector as instance of some general abstraction evolution vector.
+
+=== Coq Proof Assistant
+
+
+The abstraction‑level framework applies beyond general‑purpose programming and data systems. In proof assistants like Coq, we observe the same pattern: **constructs that approach Level 4 are composed via Level 2 mechanisms**, creating asymmetric reasoning boundaries that scale poorly as proof artefacts grow.
+
+Coq provides `Module Type` (theory/interface), `Module` (model/implementation), and Functors (parameterized contracts). Yet these operate in a syntactic layer separate from the core proof language (the Calculus of Inductive Constructions, CIC). A module cannot be passed as a proof term, stored in a variable, or injected contextually into a proof script. **Module types are not first‑class in the term language**; while they define contracts, they cannot be referenced directly as hypotheses inside a proof.
+
+Crucially, the module system is **not on the primary growth path for most developments**, though its role depends on development style. In script‑style Coq (common for interactive proofs), the growth path consists of lemmas, definitions, and tactics operating in an accumulating global context. In library‑style Coq (e.g., CompCert, MathComp), functors and module types do structure theories, but they remain orthogonal to term‑level reasoning. Coq’s typeclass mechanism and MathComp’s canonical structures provide partial Level 4 composition via implicit dictionary passing and coercions, yet they lack explicit `in`/`out` boundaries and remain tightly coupled to the global typeclass resolution engine. Unlike Java interfaces or Rust traits, which are referenceable, composable, and form the compositional backbone, Coq’s module and typeclass systems serve as packaging and parameterization utilities, not native compositional units for proof terms.
+
+[cols="2,2,2,2",options="header"]
+|===
+| Framework Dimension
+| Coq's Current Capability
+| Reasoning Pattern
+| Level Classification
+
+| Name Resolution
+| `Require`/`Import` + `Section`/`Local`
+| Lexical scoping with global accumulation fallback
+| Level 2/3 hybrid
+
+| Composition
+| Functors + explicit instantiation
+| Parameterized theory assembly
+| Level 3 (structural, not contextual)
+
+| Reasoning Scope
+| Global context + opt‑in `Local`
+| Script‑style: accumulating; Library‑style: section‑bounded
+| Level 2 default
+
+| Automation
+| `HintDb` + Typeclasses + `Local Hint`
+| Global search with opt‑in scoping
+| Level 2/3 hybrid
+|===
+
+==== Historical context
+
+Coq's module system was pioneering, but it emerged in an era where primary pressures were logical consistency and expressive power, not large‑scale team development or long‑lived codebases. Only recently (with verified compilers, large proof libraries, and industrial adoption) Coq has encountered complexity pressures comparable to enterprise software. The module system, designed for a smaller world, now reveals its limits when proof artifacts must be composed, reused, and maintained by distributed teams.
+
+==== Practical consequences
+
+The flat‑resolution pattern leads to concrete problems that mirror Level 2 scaling symptoms:
+
+- Induction principles for nested inductive types often require manual boilerplate, because module boundaries cannot hide internal details or export scoped induction schemes without explicit functor instantiation.
+- Temporary axioms added for convenience pollute the global context; colleagues accidentally depend on unproven assumptions because there is no dependency declaration to make boundaries explicit.
+- Parallel work is hampered: two developers cannot independently refine different implementations of the same theory without risking name clashes or implicit cross‑dependencies, as there is no first‑class mechanism to inject one theory into another proof context.
+
+These are **composition problems, not logic problems**. The Curry‑Howard correspondence extends naturally to object‑oriented patterns: interfaces as theories, implementations as models, dependency injection as assuming theories as hypotheses. Coq's module system was a pioneering step, but it remains a Level‑3 solution for organising theories, not a Level‑4 or Level‑5 solution for composing proofs at the term level.
+
+==== What a Level‑5 proof assistant could look like
+
+In a Level‑5 proof assistant, proofs become **holons** (scoped, dependency-declared composition units): composable artefacts with explicit dependencies and exports. The primary contract units are **theories**: named collections of types, operations, and laws (e.g., `Monoid`, `Group`). A holon `in`-s the theories it assumes, and `out`-s either a refined theory, a derived structure, or a verified implementation. Individual lemmas are `local` to a holon unless explicitly promoted to `out`.
+
+Crucially, a dependency is not an abstract theory, it is a **theory parametrized by types and operations** (generic or concrete). For example, a proof about natural numbers may need both the additive monoid `Monoid(Nat, +)` and the multiplicative monoid `Monoid(Nat, *)` as separate, named dependencies. This mirrors dependency injection in software systems, where a component might require two different dependencies with different generic arguments. For example, in Spring, type argument of `ObjectProvider<T>` acts as an implicit qualifier: `ObjectProvider<DataSource>` vs. `ObjectProvider<KafkaTemplate>` are distinguished by their type argument. Similarly, a holon’s `in Monoid(Nat, +)` and `in Monoid(Nat, *)` are distinguished by the operation, even though both satisfy `Monoid(Nat, _)`.
+
+The axiom‑pollution problem is replaced by explicit `in` dependencies on theories. A holon declares `in Monoid(Nat, +)` and checks against the theory's contract; the proof obligation is deferred to the outer holon that provides the concrete instance. This is identical to writing `class Foo { final Bar bar; }`, the class compiles against `Bar`'s interface, and the concrete instance is injected later.
+
+This bounded environment also tames proof automation: tactics like `auto` would **default to bounded hint scopes**, seeing only the theories that are `in` scope (plus any `local` lemmas). Cross‑boundary search would require explicit opt‑in. The scope is *large enough* to be useful, yet *limited enough* to keep search predictable: a critical property for team‑scale proof development. This contrasts with Coq's global hint databases, which often cause unpredictable search as libraries accumulate.
+
+Most team work occurs at the *non‑root* level: a developer can take a holon with unresolved in dependencies and prove properties that are independent of the concrete implementation. Another team member can later provide the `in` dependencies by instantiating the holon with a specific model that satisfies the *theory’s contract*. Teams commit to _contracts_ (theory types) and compose their work without global coordination.
+
+The final proof artifact (a verified compiler, a security proof, or a standard library) would be a **root holon** with no `in` dependencies, only `local` components and `out` results.
+
+Unlike Coq's current modules, these holons **are on the growth path**. As a proof grows in complexity, the number of holons increases. Developers compose them via `in`/`out` contracts, not by assembling a global context. Thus, the abstraction level of a proof assistant is determined by whether its primary reasoning units are first‑class, composable holons, not by the presence of a module system for file organization.
+
+As formal methods increasingly face larger proofs and larger teams, the pressure for Level‑5 composition will grow. Coq's pioneering module system showed the way; the next step is to make composition a first‑class part of the proof language itself, or provide a robust elaboration layer that reduces Level‑4/5 contracts to the trusted CIC kernel without breaking reasoning locality. Any such extension must preserve Coq’s small‑core soundness guarantee by treating holons as elaboration‑time contracts that emit explicit, verifiable proof terms, not by expanding the trusted computing base.
 
 [#dynamic-typing]
 [appendix]
@@ -1296,11 +1465,11 @@ The transition from level 3 to level 4 corresponds to transition from the first 
 
 Level 4 to level 5 transition might correspond to transition to some holon/system logic that would allow formalization of operations over holons/systems. This new logic might non-reducible to the higher order logic, like higher order logic is non-reducible to the first order logic.
 
-This logic needs to add a new way of existential and universal quantification that will be difficult to expression in the higher order logic. I currently see as a candidate a quantification over the structure of the holon/system. A kind of formalizing meta-programming. Aspect could be formalized as meta-statements over components.
+This logic needs to add a new way of existential and universal quantification that will be difficult to express in the higher order logic. I currently see as a candidate a quantification over the structure of the holon/system. A kind of formalizing meta-programming. Aspect could be formalized as meta-statements over components.
 
 For example, the statement like the following could be directly expressed:
 
-* The holons is structurally equivalent, if there is a bi-junction over indexes that maintain dependency renaming.
+* The holons is structurally equivalent, if there is a bijection over indexes that maintain dependency renaming.
 * If two nearby components do not depend on each other, then their order in holon could be changed while keeping structural equivalency.
 
 Currently, it could be expressed in logical 'interpreter' way. I have not found a way to express it using native constructs like it is possible to express functional language constructs.
@@ -1312,4 +1481,4 @@ I see here a potential for the further exploration, and there could be some post
 
 This semiformal process could hint a way to develop frameworks for fully formal process, if the concept semantics is encoded in the formal tools like Coq/Rocq.
 
-The semantic rules and associated inductive principles could be potentially formally analysed for the level they are representing. Then conceptual heatmaps could be built by tools for idiomatic programs that check if these concepts are actually used to manage complexity. Such heatmaps could be used as basis for language evolution and program analysis, because they could be used discover high-level concepts that are difficult to use, or if the specific program does not make a good use of high-level concepts to organize code.
+The semantic rules and associated inductive principles could be potentially formally analyzed for the level they are representing. Then conceptual heatmaps could be built by tools for idiomatic programs that check if these concepts are actually used to manage complexity. Such heatmaps could be used as basis for language evolution and program analysis, because they could be used discover high-level concepts that are difficult to use, or if the specific program does not make a good use of high-level concepts to organize code.
