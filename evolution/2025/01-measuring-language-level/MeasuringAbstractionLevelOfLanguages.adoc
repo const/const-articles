@@ -1310,7 +1310,8 @@ The psychological models provided the initial insight that led to the connection
 
 Detailed correspondence between paradigms and stages deserves more extensive work than is feasible here, so I leave it here mostly as a short side note.
 
-=== Other Domains
+[appendix]
+== Other Domains
 This article considers concept evolution for complexity management in programming languages. However, the evolution with similar structure could be seen in other domains as well.
 
 The reason is structural: Level 2 is the universal reasoning substrate. Databases flatten results to tabular rows (Level 2), proof assistants accumulate hypotheses into global contexts (Level 2), and compilers reduce holons to sequential instruction streams (Level 2). Level 1 execution, whether by silicon, a database engine, or a proof kernel, then erases order entirely for performance. Abstraction levels scale human reasoning; lower levels erase it for execution. The tension is structural, not accidental.
