@@ -1276,9 +1276,19 @@ Abbreviations used:
 [appendix]
 == Connection to Developmental Psychology
 
-The research was initially inspired by observed parallels between programming language groups and stages in https://en.wikipedia.org/wiki/Piaget%27s_theory_of_cognitive_development[J. Piaget's theory of cognitive development]. Later, the https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[Model of hierarchical complexity by M. Commons] was added to the mix. While J. Piaget considered the development of human reasoning as a whole, M. Commons noted that advancement through stages is uneven across different domains.
+The framework presented in this article did not emerge from a blank slate. It was directly inspired by **theories of human reasoning**, specifically:
 
-These models served as a **discovery heuristic** that guided the initial search for connection types and reasoning boundaries. However, developmental psychology is descriptive and bound to human maturation; it does not provide formal or empirical validation for language design. The framework extracts the abstract progression of reasoning complexity from those models and rebuilds it on programming semantics and connection topology. The levels stand on their technical merits; the psychological references remain a short side note documenting the origin of the idea.
+- https://en.wikipedia.org/wiki/Piaget%27s_theory_of_cognitive_development[Jean Piaget's theory of cognitive development] (sensorimotor, preoperational, concrete operational, formal operational stages). Piaget showed that children's reasoning matures through qualitatively distinct levels, each characterized by new ways of manipulating mental representations.
+
+- https://en.wikipedia.org/wiki/Model_of_hierarchical_complexity[Michael Commons' Model of Hierarchical Complexity] (systematic, metasystematic, paradigmatic, cross‑paradigmatic stages). Commons extended Piaget's work by formalizing the *complexity of tasks that a reasoner can handle, in the context of some domain*. His model provides explicit axioms for ordering stages by the hierarchical order of actions.
+
+These researchers did not merely describe interesting parallels – they **defined and attempted to formalize the very notion of reasoning stages**. That was a major scientific contribution. Their work proves that human cognition itself is stratified into discrete levels of increasing complexity.
+
+What I have done in this article is **reverse‑engineer why and how the same level structure appears in programming languages**. The stages of reasoning identified by Piaget and Commons are not arbitrary; they reflect structural properties of any system that must manage complexity through hierarchical composition and bounded abstraction. Programming languages – as human‑designed artifacts for managing computational complexity – naturally converge on the same ordinal scale because they must match the cognitive constraints of their users.
+
+Thus, the correspondence between language levels and psychological stages is not a mere analogy or a post‑hoc mapping. It is evidence that the **scale of abstraction is grounded in human cognition**. Piaget and Commons gave us the map of reasoning complexity; this article translates that map into the technical language of connection types, growth paths, and system composition.
+
+The table below summarizes the correspondence (the first four stages align with Levels 1‑4; later stages are extrapolated):
 
 [cols="1,3,3,2,5"]
 |===
@@ -1292,13 +1302,13 @@ These models served as a **discovery heuristic** that guided the initial search 
 | 6 | ? | ? | M. Commons | Paradigmatic and cross-paradigmatic stages
 |===
 
-There is quite clear correspondence for the first four stages. So, I think that there is some cross-validation here.
+The correspondence is strong for Levels 1‑4, providing cross‑validation that the abstraction level scale is not arbitrary. For Level 5 (system/holon‑oriented programming), the mapping to Commons' systematic/metasystematic stages is plausible but not yet confirmed by mature language implementations. For Level 6, any connection to Commons' higher stages remains speculative.
 
-For system-oriented, the correspondence with systematic and metasystematic stages is also quite strong, but there is no complete programming languages for this stage yet. Rich DSL like Spring Framework are closing up, but they are not here yet as it was discussed above.
+The paradigmatic and cross-paradigmatic stages present greater interpretive challenges. I have major doubts about the description of these stages given by M. Commons. Examples used in his articles could be interpreted in different ways. However, some wording suggests that the language-oriented paradigm might correspond to this stage. However, the language-oriented paradigm works at the language and source level (compile time), rather than runtime, so it does not look like a continuation of the mainstream evolution line. And LOP functions as horizontal rather than vertical development in language evolution. I also do not think that the usefulness of the system-oriented paradigm has been sufficiently exhausted for the next paradigm to start to appear, but it still could be an interesting area to investigate.
 
-For paradigmatic and cross-paradigmatic stages, things get somewhat difficult. I have major doubts about description of these stages given by M.Commons. Examples used in his articles could be interpreted in different ways. However, some wording suggests that language-oriented paradigm might correspond to this stage. However, language-oriented paradigm works on language and source level (compile time), rather than runtime, so it does not look like a continuation of the mainstream evolution line. And LOP using as horizontal rather than vertical development in the language evolution. I also do not think that usefulness of system-oriented paradigm is exhausted enough for the next paradigm to start to appear, but it still could be an interesting area to investigate.
+The psychological models provided the initial insight that led to the connection type analysis. However, the framework does not depend on psychology for its validity; it stands on its own technical description of link topologies, growth path analysis, and cognitive scaling.
 
-Detailed correspondence between paradigms and stages deserves much bigger work than it is possible here, so I leave it here mostly as a short side note.
+Detailed correspondence between paradigms and stages deserves more extensive work than is feasible here, so I leave it here mostly as a short side note.
 
 === Other Domains
 This article considers concept evolution for complexity management in programming languages. However, the evolution with similar structure could be seen in other domains as well.
