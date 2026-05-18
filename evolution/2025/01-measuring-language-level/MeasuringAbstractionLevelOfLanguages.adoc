@@ -1,6 +1,6 @@
 = Measuring Abstraction Level of Programming Languages
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.4, 2026-05-06
+0.1.5, 2026-05-18
 :sectnums:
 :toc:
 :toclevels: 4
@@ -21,6 +21,7 @@ This is the first article in the series, and its primary goal is to introduce th
 |===
 | Revision | Date | Comment
 
+| 0.1.5   | 2026-05-18 | Added Coq LLM discussion, appendix on memory
 | 0.1.4   | 2026-05-06 | Added Coq discussion, minor clarifications on level translation, style fixes
 | 0.1.3   | 2026-05-02 | Clarified reasoning cost topology, integrated practical diagnostics, refined Level 5 framing
 | 0.1.2   | 2026-04-30 | Correcting incorrect statements that caused overclaims
@@ -1311,6 +1312,31 @@ The psychological models provided the initial insight that led to the connection
 Detailed correspondence between paradigms and stages deserves more extensive work than is feasible here, so I leave it here mostly as a short side note.
 
 [appendix]
+== Cognitive Foundations: Operative Memory and Chunking
+
+This appendix provides formal cognitive foundations for readers who want the mechanism behind the article's diagnostic lens. The main text sometimes uses "working memory" as a single bottleneck for simplicity. However, cognitive psychology distinguishes at least three interacting systems that matter for programming:
+
+* **Short‑term memory (STM)** – a limited‑capacity store holding roughly 4–7 *discrete, unstructured items* (e.g., digits, variable names).
+** Miller (1956): link:https://cse.buffalo.edu/~rapaport/575/F01/miller56.html["The Magical Number Seven, Plus or Minus Two"]
+** Cowan (2001): link:https://www.semanticscholar.org/paper/The-magical-number-4-in-short-term-memory%253A-A-of-Cowan/c8f359b3967ddef8e6d7f6ad58213a543d33ea22?p2df["The magical number 4 in short‑term memory"]
+
+* **Long‑term memory (LTM)** – a store in which knowledge is held indefinitely (language semantics, framework patterns, team conventions). Access is slower but capacity is effectively unlimited.
+** Overview: link:https://en.wikipedia.org/wiki/Long-term_memory[Long‑term memory – Wikipedia]
+
+* **Operative memory** (Galperin, Leontiev, and others from the Soviet activity‑theory school) – a *task‑bound workspace* where developers actively manipulate *structured chunks* of knowledge (e.g., an entire algorithm, a class interface, a dependency graph). Unlike flat STM, operative memory can hold complex subgraphs – *if* the code's abstractions support chunking.
+** Scribner (1985): link:https://lchcautobio.ucsd.edu/wp-content/uploads/2017/04/AnActivityTheoryApproach-to-Memory.pdf["An Activity Theory Approach to Memory"]
+** Zinchenko (2009): link:https://psy-journal.hse.ru/data/2017/01/12/1115348629/2_Zinchenko_LIVING_MEMORY_IN_P_I_ZINCHENKO_S_RESEARCH.pdf["Living Memory in P.I. Zinchenko's Research"]
+** Supplementary: link:https://en.wikipedia.org/wiki/Chunking_(psychology)[Chunking (psychology) – Wikipedia], link:https://en.wikipedia.org/wiki/Working_memory[Working memory – Wikipedia]
+
+**Why this distinction matters for abstraction levels**
+A well‑designed contract (interface, dependency declaration, abstraction boundary) is not merely "one less item to remember". It is a *chunk boundary* that allows operative memory to treat an entire subgraph (e.g., a whole module, a JSON decoder, a transaction manager) as a single, manipulable unit. When abstractions leak – e.g., when you need to know implementation details to use an interface – operative memory fragments back into flat item‑tracking, and cognitive load spikes *non‑linearly*.
+
+**The cost of context switching as indirect supporting evidence for operative memory**
+Empirical research shows that task switching in software development imposes a significant load on operative memory, directly affecting productivity. The foundational finding (link:https://ics.uci.edu/~gmark/chi08-mark.pdf[Mark et al., CHI 2008]) established that developers need time to recover from interruptions, and that interruptions have a negative effect on the quality of work — increasing stress, frustration, and time pressure while reducing attentional continuity. This suggests that there exists a type of memory in the human mind that is distinct from short‑term memory (because it has greater capacity) and distinct from long‑term memory (because reconstructing task‑bound structures requires effort after context switches).
+
+Higher‑level languages better support chunking and scope reduction. By providing explicit boundaries (blocks, functions, modules, interfaces), they let operative memory work with larger, structured units – reducing the need to track low‑level details and keeping cognitive load manageable as systems grow.
+
+[appendix]
 == Other Domains
 This article considers concept evolution for complexity management in programming languages. However, the evolution with similar structure could be seen in other domains as well.
 
@@ -1376,6 +1402,8 @@ As it could be seen, the organizations evolved using the same path. And they als
 
 === Coq Proof Assistant
 
+NOTE: This appendix examines Coq's module and typeclass systems as potential compositional mechanisms, not Coq's core logic or type theory.
+
 The abstraction‑level framework applies beyond general‑purpose programming and data systems. In proof assistants like Coq, we observe the same pattern: **constructs that approach Level 4 are composed via Level 2 mechanisms**, creating asymmetric reasoning boundaries that scale poorly as proof artefacts grow.
 
 Coq provides `Module Type` (theory/interface), `Module` (model/implementation), and Functors (parameterized contracts). Yet these operate in a syntactic layer separate from the core proof language (the Calculus of Inductive Constructions, CIC). A module cannot be passed as a proof term, stored in a variable, or injected contextually into a proof script. **Module types are not first‑class in the term language**; while they define contracts, they cannot be referenced directly as hypotheses inside a proof.
@@ -1424,23 +1452,52 @@ The flat‑resolution pattern leads to concrete problems that mirror Level 2 sca
 
 These are **composition problems, not logic problems**. The Curry‑Howard correspondence extends naturally to object‑oriented patterns: interfaces as theories, implementations as models, dependency injection as assuming theories as hypotheses. Coq's module system was a pioneering step, but it remains a Level‑3 solution for organizing theories, not a Level‑4 or Level‑5 solution for composing proofs at the term level.
 
-==== What a Level‑5 proof assistant could look like
+==== What a Level‑5 Proof Assistant Could Look Like
 
-In a Level‑5 proof assistant, proofs become **holons** (scoped, dependency-declared composition units): composable artefacts with explicit dependencies and exports. The primary contract units are **theories**: named collections of types, operations, and laws (e.g., `Monoid`, `Group`). A holon `in`-s the theories it assumes, and `out`-s either a refined theory, a derived structure, or a verified implementation. Individual lemmas are `local` to a holon unless explicitly promoted to `out`.
+In a Level‑5 proof assistant, proofs become **holons**: scoped, dependency‑declared composition units with explicit contracts. The primary contract units are **theories** — named collections of types, operations, and laws (e.g., `Monoid`, `Group`). A holon `in`-s the theories it assumes, and `out`-s either a refined theory, a derived structure, or a verified implementation. Individual lemmas are `local` to a holon unless explicitly promoted to `out`.
 
-Crucially, a dependency is not an abstract theory, it is a **theory parametrized by types and operations** (generic or concrete). For example, a proof about natural numbers may need both the additive monoid `Monoid(Nat, +)` and the multiplicative monoid `Monoid(Nat, *)` as separate, named dependencies. This mirrors dependency injection in software systems, where a component might require two different dependencies with different generic arguments. For example, in Spring, type argument of `ObjectProvider<T>` acts as an implicit qualifier: `ObjectProvider<DataSource>` vs. `ObjectProvider<KafkaTemplate>` are distinguished by their type argument. Similarly, a holon’s `in Monoid(Nat, +)` and `in Monoid(Nat, *)` are distinguished by the operation, even though both satisfy `Monoid(Nat, _)`.
+Crucially, a dependency is not an abstract theory; it is a **theory parametrized by types and operations** (generic or concrete). For example, a proof about natural numbers may need both the additive monoid `Monoid(Nat, +)` and the multiplicative monoid `Monoid(Nat, *)` as separate, named dependencies. This mirrors dependency injection in software systems, where type arguments act as implicit qualifiers: `ObjectProvider<DataSource>` vs. `ObjectProvider<KafkaTemplate>` are distinguished by their generic parameter. Similarly, a holon’s `in Monoid(Nat, +)` and `in Monoid(Nat, *)` are distinguished by the operation, even though both satisfy `Monoid(Nat, _)`.
 
-The axiom‑pollution problem is replaced by explicit `in` dependencies on theories. A holon declares `in Monoid(Nat, +)` and checks against the theory's contract; the proof obligation is deferred to the outer holon that provides the concrete instance. This is identical to writing `class Foo { final Bar bar; }`, the class compiles against `Bar`'s interface, and the concrete instance is injected later.
+The axiom‑pollution problem is replaced by explicit `in` dependencies on theories. A holon declares `in Monoid(Nat, +)` and checks against the theory's contract; the proof obligation is deferred to the outer holon that provides the concrete instance. This is identical to writing `class Foo { final Bar bar; }`: the class compiles against `Bar`'s interface, and the concrete instance is injected later.
 
-This bounded environment also tames proof automation: tactics like `auto` would **default to bounded hint scopes**, seeing only the theories that are `in` scope (plus any `local` lemmas). Cross‑boundary search would require explicit opt‑in. The scope is *large enough* to be useful, yet *limited enough* to keep search predictable: a critical property for team‑scale proof development. This contrasts with Coq's global hint databases, which often cause unpredictable search as libraries accumulate.
+This bounded environment also tames proof automation. Tactics like `auto` would **default to bounded hint scopes**, seeing only the theories that are `in` scope (plus any `local` lemmas). Cross‑boundary search would require explicit opt‑in. The scope is *large enough* to be useful, yet *limited enough* to keep search predictable — a critical property for team‑scale proof development. This contrasts with Coq's global hint databases, which often cause unpredictable search and namespace collisions as libraries accumulate.
 
-Most team work occurs at the *non‑root* level: a developer can take a holon with unresolved in dependencies and prove properties that are independent of the concrete implementation. Another team member can later provide the `in` dependencies by instantiating the holon with a specific model that satisfies the *theory’s contract*. Teams commit to _contracts_ (theory types) and compose their work without global coordination.
+Dependencies and lemma‑local holons can be further packaged into **aspects** — modular, composable building blocks that collectively shape a proof’s reasoning environment. Much like how `@PreAuthorize`, `@GetMapping`, and `@RequestParam` combine in Spring to define an endpoint’s execution context, multiple proof aspects (induction principles, symmetry lemmas, domain‑specific hints, or boilerplate tactics) compose to create a structured *proof space*. Instead of repeating these patterns or relying on global hint databases, developers `in` the relevant aspects, and the proof assistant assembles them into a bounded, predictable reasoning context. This makes proof automation *composable* rather than *monolithic*: each aspect contributes a slice of the available lemmas and tactics, and the combined scope is explicit, locally scoped, and free from hidden cross‑contamination.
+
+Most team work occurs at the *non‑root* level: a developer can take a holon with unresolved `in` dependencies and prove properties that are independent of the concrete implementation. Another team member can later provide the dependencies by instantiating the holon with a specific model that satisfies the theory’s contract. Teams commit to _contracts_ and compose their work without global coordination.
 
 The final proof artifact (a verified compiler, a security proof, or a standard library) would be a **root holon** with no `in` dependencies, only `local` components and `out` results.
 
-Unlike Coq's current modules, these holons **are on the growth path**. As a proof grows in complexity, the number of holons increases. Developers compose them via `in`/`out` contracts, not by assembling a global context. Thus, the abstraction level of a proof assistant is determined by whether its primary reasoning units are first‑class, composable holons, not by the presence of a module system for file organization.
+Unlike Coq's current module system, which operates primarily at the file/compilation level, these holons **are on the growth path**. As a proof grows in complexity, the number of holons increases. Developers compose them via `in`/`out` contracts, not by assembling a global context. Thus, the abstraction level of a proof assistant is determined by whether its primary reasoning units are first‑class, composable holons, not by the presence of a module system for file organization.
 
 As formal methods increasingly face larger proofs and larger teams, the pressure for Level‑5 composition will grow. Coq's pioneering module system showed the way; the next step is to make composition a first‑class part of the proof language itself, or provide a robust elaboration layer that reduces Level‑4/5 contracts to the trusted CIC kernel without breaking reasoning locality. Any such extension must preserve Coq’s small‑core soundness guarantee by treating holons as elaboration‑time contracts that emit explicit, verifiable proof terms, not by expanding the trusted computing base.
+
+==== LLM Considerations for Dependent Types
+
+Research on LLMs for Coq, Lean, and Agda often attributes performance drops to the inherent difficulty of dependent types. A more precise diagnosis is likely the *lack of proof packaging constructs*. The theorem‑proving community traditionally favors linear tactic scripts and explicit lemma chains, which force readers (human or AI) to reconstruct proof state step‑by‑step. This is a cultural preference, not a type‑theoretic necessity.
+
+Under the Curry‑Howard correspondence, object‑oriented interfaces, traits, and module signatures are just *existential types* and *parametric functors*. Packaging a proof behind a verified contract (`theory ProofX { type T ...; def D := ... ; lemma A : ...; lemma B : ...; }`) is logically equivalent to hiding implementation behind an interface. When DTL ecosystems underuse these packaging constructs, they flatten the reasoning graph into a global proof timeline — maximizing cognitive load and steepening the complexity curve.
+
+**What the research shows**:
+
+* Autoregressive generation alone fails for dependent types because the type checker rejects approximation; every step must be globally consistent link:https://arxiv.org/abs/2306.15626[LeanDojo, 2023]. Interfaces and classes in OOP are the way to represent *related partial knowledge* — we don't need global consistency, only contract‑bounded consistency. Similarly, dependency injection could replace explicit linking with restricted, context‑sensitive search, splitting reasoning into system composition and local component‑wide reasoning.
+* Successful systems treat the type checker as a reasoning partner, using retrieval‑augmented lemma search, tactic‑state embeddings, and iterative refinement link:https://arxiv.org/abs/2504.21801[DeepSeek‑Prover‑V2, 2025].
+* The dominant bottleneck isn't token count; it's *proof‑state representation*. LLMs perform poorly when forced to reason over flat proof scripts, but improve dramatically when given structured context (current goal, available lemmas, type constraints).
+
+**Practical implication**: The "complexity cliff" in dependent types is partly self‑imposed. Both humans and LLMs require explicit context partitioning to avoid working‑memory saturation. The language doesn't eliminate complexity; it forces it into a form that can be partitioned, verified, and scaled. When designing proof libraries or AI‑assisted tactics, ask: *"Can this proof be held as one chunk, or must the reader de‑chunk to understand usage?"* This is the same diagnostic question that guides interface design in Level‑4 languages.
+
+*The chicken‑and‑egg problem for proof data*:
+Current AI research for proof assistants relies almost exclusively on tactic scripts because they are the only abundant human‑written proof data. Tactics are essentially editor commands that operate on the focused proof state, not declarative proof terms. Training LLMs on tactic scripts is analogous to training a Java model on IntelliJ IDEA keystrokes rather than on source files: the model learns surface command patterns but lacks the structured reasoning context that gives them meaning. Raw proof terms are too low‑level and verbose to write by hand, and existing structured proof languages (e.g., Isabelle/Isar) still lack the modular, contract‑bounded packaging needed for large‑scale composition. Without larger composable proof units, it is hard to generate the datasets that would enable LLMs to learn genuine reasoning rather than merely mimicking a proof‑state editor. The proposed structured proof language (with explicit dependency declarations and contract boundaries, e.g., `in`/`out`‑style notation) aims to break this cycle by providing a structured, human‑writable, machine‑tractable representation — turning proof engineering into a compositional, scalable activity for both humans and AI.
+
+**Proof irrelevance enables post‑hoc structuring**:
+Because dependent type systems treat proofs as *write‑once* artifacts (proof irrelevance), we can afford to convert tactic‑generated proofs into high‑level structured, composable representations *after* verification. Tactics remain the interactive editing interface; structured proofs become the durable, machine‑tractable artifact. This elaboration step yields immediate benefits:
+
+* **Bounded proof search**: Tactics operate within scoped dependencies (e.g., declared `in` assumptions), not global hint databases — eliminating unpredictable search from environment‑side effects.
+* **Faster incremental re‑verification**: Only affected proofs need re‑checking; tactic re‑execution is avoided because the structured contract is already verified.
+* **Proof caching and reuse**: Verified contracts can be memoized and shared across projects without re‑elaboration.
+* **High‑quality structured training data**: Once converted, structured proof units become composable, contract‑anchored examples for future LLM assistance.
+
+This resolves the chicken‑and‑egg problem: we don't need LLMs to generate structured proofs from scratch. We generate proofs via tactics (as today), then elaborate them into high‑level proof units as a compilation step. The structured form becomes the interface; the kernel term remains the ground truth. Predictability comes from the contract; soundness comes from the kernel.
 
 [#dynamic-typing]
 [appendix]
@@ -1475,7 +1532,7 @@ The transition from level 3 to level 4 corresponds to transition from the first 
 
 Level 4 to level 5 transition might correspond to transition to some holon/system logic that would allow formalization of operations over holons/systems. This new logic might non-reducible to the higher order logic, like higher order logic is non-reducible to the first order logic.
 
-This logic needs to add a new way of existential and universal quantification that will be difficult to express in the higher order logic. I currently see as a candidate a quantification over the structure of the holon/system. A kind of formalizing meta-programming. Aspect could be formalized as meta-statements over components.
+This logic needs to add a new way of existential and universal quantification that will be difficult to express in the higher order logic. I currently see as a candidate a quantification over the structure of the holon/system. A kind of formalizing metaprogramming. Aspect could be formalized as meta-statements over components.
 
 For example, the statement like the following could be directly expressed:
 
