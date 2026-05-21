@@ -71,7 +71,7 @@ The cost of steps 1 and 2 dominates development time. For any given task, the co
 |===
 | | **Not Viewed** | **Viewed**
 | **Should Have Been Viewed**
-| *Missed Scope* → Bugs, regressions, incomplete fixes
+| *Missed Context* → Bugs, regressions, incomplete fixes
 | *Productive Work* → Necessary reasoning, bounded by human working memory
 | **Should Not Have Been Viewed**
 | *Ideal Code* → Zero cognitive load for this task; the goal of abstraction
