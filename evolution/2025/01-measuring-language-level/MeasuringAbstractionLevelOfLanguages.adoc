@@ -479,7 +479,7 @@ Every extraction site must account for all possible variants.
 `((number of referrers) + (number of variants)) × (used contract size)`
 Callers reason only up to the interface boundary; implementers reason from it.
 
-Since reasoning cost dominates overall cognitive load, the difference between these approaches stems primarily from *reasoning topology* rather than syntax or learning overhead.
+In many contexts, reasoning topology is a dominant factor in cognitive load differences between these approaches, though syntax, learning overhead, and tooling also contribute.
 
 [NOTE]
 ====
@@ -559,7 +559,7 @@ The more abstract contract is, the more flexibility in implementation of the con
 
 ===== Cost of SOLID
 
-The thing that is missed in the SOLID is that contract itself has the cost: it needs to be formulated, maintained, and distributed. Also, components could not rely on things that are not in the contract. For widely distributed library, the design should be very careful with respect to SOLID, but for private microservice code we could cut corners, to make development cheaper and refactor it later when needed. The total cost of contract depends on uses and implementations, if there is a single supplier of the interface and a single producer, the cost of having separate interface might be too high.
+The thing that is missed in the SOLID is that contract itself has the cost: it needs to be formulated, maintained, and distributed. Also, components could not rely on things that are not in the contract. For widely distributed library, the design should be very careful with respect to SOLID, but for private microservice code we could cut corners, to make development cheaper and refactor it later when needed. The total cost of contract depends on uses and implementations, if there is a single supplier of the interface and a single producer, the benefit of a separate interface must be weighed against its maintenance overhead.
 
 This is why many OOP languages eventually implement some form of sum and product types that are basically the level 3 type constructs. This allows to have small level 3 islands where local reasoning simpler due to the small size and lower abstraction level, while still having overall the level 4 reasoning for the program, that allows us not to think about details of these islands.
 
@@ -854,7 +854,7 @@ Several factors delay the adoption of native holon composition:
 * **Complexity pressure threshold**: Academic projects rarely reach the scale where Level 5 benefits become obvious. Industry projects do, but are locked into existing ecosystems, which are perceived as "normal".
 * **Incremental adoption path**: A clean-slate Level 5 language requires a migration strategy. However, as we could learn from Java language experience, higher level languages, should support lower levels constructs well, so level 5 language must be a good level 4 language.
 
-The transition will resemble the move from OOP-in-C to OOP-in-C++: implicit constructs, macro-based DSLs, and design patterns gradually replaced by explicit language features.
+One plausible transition path resembles the move from OOP-in-C to OOP-in-C++: implicit constructs and design patterns gradually replaced by explicit language features. However, evolution is path-dependent, and alternative trajectories are possible.
 
 [#l5-example]
 === Example of system/holon-oriented language
@@ -1178,7 +1178,7 @@ There are kinds of trivial containment that does not add structure over containe
 
 The step of identifying concepts on the growth path is semiformal and has subjective elements.
 
-* Idiomatic programs needs to be considered, because "the determined Real Programmer can write FORTRAN programs in any language". It is also possible to write procedural code in OOP languages. The step of selecting idiomatic program is somewhat subjective. The understanding of good OOP stabilized only recently, and there are still disagreements on details or applicability of the principles. However, following industry standards and code size will reduce selection subjectivity. The programs should be good enough to grow in side, and industry standards would allow to filter out code that use language in non-intended way. While analysis of a single program could introduce wrong data, analyzing multiple programs will allow reducing subjectivity of the step.
+* Idiomatic programs needs to be considered, because "the determined Real Programmer can write FORTRAN programs in any language". It is also possible to write procedural code in OOP languages. The step of selecting idiomatic program is somewhat subjective. The understanding of good OOP stabilized only recently, and there are still disagreements on details or applicability of the principles. However, following industry standards and code size will reduce selection subjectivity. The programs should be good enough to grow in size, and industry standards would allow to filter out code that use language in non-intended way. While analysis of a single program could introduce wrong data, analyzing multiple programs will allow reducing subjectivity of the step.
 
 * The reasoning analysis step requires introspection and observation.
 
@@ -1440,7 +1440,7 @@ Crucially, the module system is **not on the primary growth path for most develo
 
 ==== Historical context
 
-Coq's module system was pioneering, but it emerged in an era where primary pressures were logical consistency and expressive power, not large‑scale team development or long‑lived codebases. Only recently (with verified compilers, large proof libraries, and industrial adoption) Coq has encountered complexity pressures comparable to enterprise software. The module system, designed for a smaller world, now reveals its limits when proof artifacts must be composed, reused, and maintained by distributed teams.
+Coq's module system emerged when logical consistency and expressive power were dominant concerns; large‑scale team development and long‑lived codebases became prominent pressures later, revealing scaling limits in the original design. Only recently (with verified compilers, large proof libraries, and industrial adoption) Coq has encountered complexity pressures comparable to enterprise software. The module system, designed for a smaller world, now reveals its limits when proof artifacts must be composed, reused, and maintained by distributed teams.
 
 ==== Practical consequences
 
@@ -1466,7 +1466,7 @@ Dependencies and lemma‑local holons can be further packaged into **aspects** �
 
 Most team work occurs at the *non‑root* level: a developer can take a holon with unresolved `in` dependencies and prove properties that are independent of the concrete implementation. Another team member can later provide the dependencies by instantiating the holon with a specific model that satisfies the theory’s contract. Teams commit to _contracts_ and compose their work without global coordination.
 
-The final proof artifact (a verified compiler, a security proof, or a standard library) would be a **root holon** with no `in` dependencies, only `local` components and `out` results.
+A proof for a verified compiler, security proof, or standard library is not considered complete until it culminates in one or more **root holons**. Each root holon relies exclusively on system‑provided `in` dependencies and `local` components, and may optionally expose `out` results. Within its scope, the root holon grounds and connects all subordinate components, providing the structural guarantee that verification is finished. The system `in` dependencies grant privileged capabilities (such as axiom introduction or low‑level kernel interactions) that must be strictly confined. Dangerous constructs are never globally exposed. Instead, the root holon acts as a capability gate, injecting privileges only into the downstream components that require them for their specific verified scope.
 
 Unlike Coq's current module system, which operates primarily at the file/compilation level, these holons **are on the growth path**. As a proof grows in complexity, the number of holons increases. Developers compose them via `in`/`out` contracts, not by assembling a global context. Thus, the abstraction level of a proof assistant is determined by whether its primary reasoning units are first‑class, composable holons, not by the presence of a module system for file organization.
 
@@ -1474,7 +1474,7 @@ As formal methods increasingly face larger proofs and larger teams, the pressure
 
 ==== LLM Considerations for Dependent Types
 
-Research on LLMs for Coq, Lean, and Agda often attributes performance drops to the inherent difficulty of dependent types. A more precise diagnosis is likely the *lack of proof packaging constructs*. The theorem‑proving community traditionally favors linear tactic scripts and explicit lemma chains, which force readers (human or AI) to reconstruct proof state step‑by‑step. This is a cultural preference, not a type‑theoretic necessity.
+Research on LLMs for dependent-type systems often cites the inherent difficulty of dependent types as a bottleneck. An alternative hypothesis is that the lack of proof packaging constructs may also contribute — though this relationship remains under active investigation. The theorem‑proving community traditionally favors linear tactic scripts and explicit lemma chains, which force readers (human or AI) to reconstruct proof state step‑by‑step. This is a cultural preference, not a type‑theoretic necessity.
 
 Under the Curry‑Howard correspondence, object‑oriented interfaces, traits, and module signatures are just *existential types* and *parametric functors*. Packaging a proof behind a verified contract (`theory ProofX { type T ...; def D := ... ; lemma A : ...; lemma B : ...; }`) is logically equivalent to hiding implementation behind an interface. When DTL ecosystems underuse these packaging constructs, they flatten the reasoning graph into a global proof timeline — maximizing cognitive load and steepening the complexity curve.
 
@@ -1517,7 +1517,7 @@ There are some ways to address these problems in the languages. However, they ar
 
 Pure dynamic typing shifts type contracts from compiler-enforced boundaries to developer memory and runtime checks. Modern ecosystems mitigate this via gradual typing (TypeScript, Python), IDE-assisted inference, and contract testing, but these add toolchain overhead and don't eliminate the non-linear cognitive scaling risk in large, long-lived codebases where context shifts frequently.
 
-Thus, I think dynamically-typed level 5 language is not feasible. The static typing will be likely added later anyway if language is used to develop large code bases, so doing this intermediate step will cause spending efforts later to bolt on static typing while solving conflicts and carrying some dead weight of dynamically-typed legacy.
+Thus, a purely dynamically-typed Level 5 language faces significant cognitive-scaling challenges. Hybrid approaches (gradual typing, optional annotations) may mitigate these risks, but the trade-offs require careful design. The static typing will be likely added later anyway if language is used to develop large code bases, so doing this intermediate step will cause spending efforts later to bolt on static typing while solving conflicts and carrying some dead weight of dynamically-typed legacy.
 
 A powerful type inference could make a statically-typed language looking like a dynamically-typed language. However, this is not necessary a good thing, the types need to be inferred by the developer as well when reading the code, and this information needs to be saved in the human memory while reading the code. So, even if there is a powerful type inference, it makes sense to leave type information at important checkpoints, and reasoning scope could be limited by these type annotations. However, at least, the IDE could supply us with precise information rather than guesses, so it is still a better situation than with dynamic typing.
 
@@ -1530,7 +1530,7 @@ A level 5 language will provide more benefits on the large code bases, this is p
 
 The transition from level 3 to level 4 corresponds to transition from the first order logic to the higher order logic. The higher-order logic adds quantification over types and sets.
 
-Level 4 to level 5 transition might correspond to transition to some holon/system logic that would allow formalization of operations over holons/systems. This new logic might non-reducible to the higher order logic, like higher order logic is non-reducible to the first order logic.
+Level 4 to level 5 transition might correspond to transition to some holon/system logic that would allow formalization of operations over holons/systems. This new logic may not be reducible to higher-order logic, analogous to how higher-order logic is not reducible to first-order logic — though formal verification of this claim remains future work.
 
 This logic needs to add a new way of existential and universal quantification that will be difficult to express in the higher order logic. I currently see as a candidate a quantification over the structure of the holon/system. A kind of formalizing metaprogramming. Aspect could be formalized as meta-statements over components.
 
@@ -1548,4 +1548,4 @@ I see here a potential for the further exploration, and there could be some post
 
 This semiformal process could hint a way to develop frameworks for fully formal process, if the concept semantics is encoded in the formal tools like Coq/Rocq.
 
-The semantic rules and associated inductive principles could be potentially formally analyzed for the level they are representing. Then conceptual heatmaps could be built by tools for idiomatic programs that check if these concepts are actually used to manage complexity. Such heatmaps could be used as basis for language evolution and program analysis, because they could be used discover high-level concepts that are difficult to use, or if the specific program does not make a good use of high-level concepts to organize code.
+The semantic rules and associated inductive principles could be potentially formally analyzed for the level they are representing. Then conceptual heatmaps could be built by tools for idiomatic programs that check if these concepts are actually used to manage complexity. Such heatmaps could inform language evolution and program analysis by highlighting high-level concepts that are underutilized or difficult to apply — though developing reliable detection methods remains an open research question.
