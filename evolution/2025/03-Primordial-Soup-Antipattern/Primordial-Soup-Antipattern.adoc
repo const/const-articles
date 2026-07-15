@@ -1,6 +1,6 @@
 = Primordial Soup Antipattern
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-0.2.1, 2026-05-06: Style fixes, and Spring Modulith Reference
+0.2.2, 2026-07-15
 :toc:
 :sectnums:
 
@@ -15,6 +15,7 @@ NOTE: This is an opinion piece / blog‑style article, not a formal specificatio
 |===
 | Revision | Date | Comment
 
+| 0.2.2   | 2026-07-15 | Minor fixes, add metaphors.
 | 0.2.1   | 2026-05-06 | Style fixes, and Spring Modulith Reference
 | 0.2.0   | 2026-05-02 | Structural & theoretical alignment with abstraction-level
 | 0.1.1   | 2026-04-30 | Minor improvement
@@ -124,6 +125,7 @@ When applied to architectural composition without Level 3 structure or Level 4 c
 |===
 
 This is a *granularity mismatch*, not a missing capability:
+
 - ✅ Level 5 engine exists (ApplicationContext)
 - ✅ Level 4 contracts exist for components (interfaces, generics)
 - ❌ Level 3 structure missing for systems (no explicit inputs/locals/exports)
@@ -379,6 +381,14 @@ In the article link:../02-holon-composition/HolonComposition.adoc[Report on Holo
 The main idea is the introduction of system composition operators that allow composing larger systems from smaller ones. The proposed language is statically typed, so most errors related to system composition will be detected at compile time or (with IDE support) during source code editing.
 
 The goal is to support most useful parts of Spring Boot and plugin frameworks like OSGi DS in a statically-typed way as a starting point. The proposed language goes beyond that and introduces hierarchical composition and contract-based composition of systems (for example, lambda-systems).
+
+=== How Does It Change Things
+
+The first change is structural. The Spring Framework is comparable to a Viking longhouse, where all processes happen within a single massive context, isolated only by cloth and leather curtains. In contrast, a holonic structure resembles a modern office building with a strict hierarchy of floors, companies, divisions, and rooms, where business processes occur strictly in their designated places.
+
+The second change affects the development process itself. Working with the Spring Framework is strikingly similar to alchemy. Developers pour components from various jars into a single common cauldron - the `ApplicationContext`. This mixture is then fine-tuned with annotations, configurations, and implemented interfaces. If a good recipe is followed, everything works. If not, the cauldron explodes. Fortunately, this usually happens in testing rather than in production. Experienced alchemists can deduce what went wrong simply by reading the "smoke" of vague logs and exception stack traces.
+
+In contrast, a holonic system composition language offers an engineering approach to system architecture. Systems are constructed from distinct parts with explicit contracts, allowing each component to be independently type-checked.
 
 == Is it possible to fix the Spring Framework?
 

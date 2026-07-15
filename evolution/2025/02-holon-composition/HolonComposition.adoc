@@ -1,6 +1,6 @@
 = Report on Holon/System Composition Operations
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-v0.1.1, 2025-10-12: Corrected spelling and grammar errors and reformatting.
+0.1.2, 2026-07-15
 :sectnums:
 :toc:
 :toclevels: 3
@@ -13,6 +13,7 @@ By {author}, {revnumber}, {revdate}
 |===
 | Revision | Date | Comment
 
+| 0.1.2   | 2026-07-15 | Incomplete fixes.
 | 0.1.1   | 2025-10-12 | Corrected spelling and grammar errors and reformatting.
 | 0.1.0   | 2025-08-02 | Initial version
 |===
@@ -74,11 +75,11 @@ It would be described as:
 [source]
 ----
 interface IoAction[T, R] with {
-    @FunctionalInterface;
+    @[FunctionalInterface];
     extends GenericAction;
     type T with { extends AutoCloseable; };
 } as {
-    fn doIt(T resource) : R with { throws Exception; };
+    fn doIt(resource : T) : R with { throws Exception; };
 }
 ----
 
@@ -91,11 +92,11 @@ Aspects (or mixins) are basically reusable definition sets. Let's consider examp
 [source]
 ----
 interface IoAction[T, R] with {
-    @FunctionalInterface;
+    @[FunctionalInterface];
     extends GenericAction;
     type T with { extends AutoCloseable; }
 } as {
-    fn doIt(T resource) : R with { throws Exception; };
+    fn doIt(resource : T) : R with { throws Exception; };
 }
 ----
 
@@ -107,17 +108,17 @@ aspect Closeable for type with {
     extends AutoCloseable;
 };
 aspect MyAction[T] for interface with {
-    @FunctionalInterface;
+    @[FunctionalInterface];
     extends GenericAction;
-    type T with { @Closeable; }
+    type T with { @[Closeable]; }
 };
 aspect ThrowsException for fn with {
     throws Exception;
 };
 interface IoAction[T, R] with {
-    @MyAction[T];
+    @[MyAction[T]];
 } as {
-    fn doIt(T resource) : R with { @ThrowsException; };
+    fn doIt(resource : T) : R with { @[ThrowsException]; };
 }
 ----
 
@@ -131,15 +132,15 @@ fn test() with {
     in compile var method : MethodInfo;
     in static var log : Logger;
     interceptor SyncLogTime (next) with {
-        @InterceptorPriority(100);
+        @[InterceptorPriority](100);
     } as  {
         log.debug("Starting method execution {}", method.getSignature());
-        var start = System.nanoTime();
+        var start = [System].nanoTime();
         try {
             return next();
         } finally {
             log.debug("Finishing method execution {}, took {}ns",
-                method.getSignature(), System.nanoTime() - start);
+                method.getSignature(), [System].nanoTime() - start);
         }
     }
 } as {
@@ -169,10 +170,10 @@ aspect JsonIgnore with {
     ...
 }
 aspect JsonObject for class with {
-    require SerializableObject default SerializablePojo()
+    require [SerializableObject] default [SerializablePojo]()
 } as {
     imply for var {
-        require JsonField default JsonProperty();
+        require [JsonField] default [JsonProperty]();
     }
 }
 ----
@@ -206,6 +207,9 @@ holon class HelloService {
     fn greeting(user : String) : String {
        return "Hello, %s!".formatted(user);
     };
+    @PreDestroy {
+        [System].out.println("Closing");
+    };
 };
 ----
 
@@ -213,72 +217,71 @@ From the base language, holons are available as classes with a protected constru
 
 [source, java]
 ----
-public class HelloService {
-    protected HelloService() {
+public final class HelloService {
+    private HelloService() {
     }
-    public static HelloService create() {
-        return new HelloService();
+    public static Disposable<HelloService> newHolon() {
+        return Dispoable.of(new HelloService(), HelloService::dispose);
     }
     public String greeting(String user) {
         return "Hello, %s!".formatted(user);
     }
+    private static void dispose(HelloService service) {
+        System.out.println("Closing");
+    }
 }
 ----
 
-From Java, it could be created directly using the `create` method:
+From Java, it could be created directly using the `newHolon` method:
 
 [source]
 ----
-var helloService = HelloService.create();
+var helloService = [HelloService]();
 System.out.println(helloService.greeting("Test"));
 ----
 
-The holon could also be used with a `local` declaration, which is possible as type fields and as local variables in methods. The declaration provides a number of shortcuts, allowing omitting the factory method name in case of the `create` factory method, and even the variable name if it matches the name of the type with the first letter lowercased. So the following forms are equivalent:
+The holon could also be used with a `local` declaration, which is possible as type fields and as local variables in methods. The declaration provides a number of shortcuts, allowing omitting the factory method name in case of the `newHolon` factory method:
 
 [source]
 ----
-local var helloService : HelloService = HelloService.create();
-local var helloService : HelloService = HelloService();
-local var helloService = HelloService();
-local HelloService.create();
-local HelloService();
+local var helloService : HelloService = [HelloService].newHolon();
+local var helloService : HelloService = [HelloService]();
+local var helloService = [HelloService]();
+local [HelloService](); // does not create name differently
 ----
-
-These simplifications reflect the fact that, in the case of variable names for components, the most common name for a component is the name of the type with the first letter lowercased.
 
 It is possible to write the same component (possibly with different parameters, which will be discussed later) several times in a single context.
 
 [source]
 ----
-local HelloService();
-local HelloService();
+local [HelloService]();
+local [HelloService]();
 ----
 
-In this case, internal names are generated, but it is not possible to reference components by the generated name. They could be referenced only implicitly. However, it is possible to explicitly name components so they can be referenced by name again.
 
 == Level 2. Dependency Injection
 
 Holons can have parameters. The parameters are of two kinds:
 
-* Other holons - that can be injected implicitly
-* Classes, primitive types, records, and other values that are always injected explicitly.
+* Other holons - that can be injected implicitly, specified with `in` keyword.
+* Classes, primitive types, records, and other values that are always injected explicitly. Specified with parameter keyword `?`
 
 [source]
 ----
 holon class TemplateEngine {
     fn applyTemplate(template : String, parameters : array[Object]) : String {
-        return template.formatted(*parameters);
+        return template.formatted(parameters);
     };
 };
 holon class GreetingsService {
-    in template : String = "Hello, %s!";
-    in TemplateEngine;
+    ? template : String = "Hello, %s!";
+    in [TemplateEngine];
     fn greeting(user : String) : String {
-       return templateEngine.applyTemplate(template, array.of(user));
+       return templateEngine.applyTemplate(template, [array].of(user));
     };
 };
 holon class CheckInService {
-    in GreetingsService;
+    in [GreetingsService];
     fn welcomeMessage(user : String) {
         return greetingsService.greeting(user) + " Please check-in today!";
     }
@@ -289,26 +292,26 @@ The "in" declaration follows the same shortcut rules as the "local" declaration.
 
 [source]
 ----
-in var templateEngine : TemplateEngine;
-in TemplateEngine;
+in val templateEngine : TemplateEngine;
+in [TemplateEngine]; // no name declared
 ----
 
 If a holon is declared using "in" or "local", it is possible to automatically inject it when using a local declaration. The parameters of the holon are considered named parameters, so the name must be specified using `#name` syntax. So the full syntax is:
 
 [source]
 ----
-local var templateEngine : TemplateEngine = TemplateEngine.create();
-local var greetingsService : GreetingsService = GreetingsService.create(
+local val templateEngine : TemplateEngine = [TemplateEngine].newHolon();
+local val greetingsService : GreetingsService = [GreetingsService].newHolon(
     #template "Hello, %s!",
     #templateEngine templateEngine
 );
-local var checkInService : CheckInService = CheckInService.create(#greetingsService greetingsService);
+local val checkInService : CheckInService = [CheckInService].newHolon(#greetingsService greetingsService);
 
 // ....
-System.out.println(checkInService.welcomeMessage("Test"));
+[System].out.println(checkInService.welcomeMessage("Test"));
 ----
 
-However, this could be shortened to:
+The generic operator `?![Type]` allows referencing a single value in the context that corresponds to this type. The operator has the same precedence as `.`, `()`, or other navigational operators. So the example could be written as:
 
 [source]
 ----
@@ -317,37 +320,25 @@ local GreetingsService();
 local CheckInService();
 
 // ....
-System.out.println(checkInService.welcomeMessage("Test"));
-----
-
-The generic operator `<![Type]` allows referencing a single value in the context that corresponds to this type. The operator has the same precedence as `.`, `()`, or other navigational operators. So the example could be written as:
-
-[source]
-----
-local TemplateEngine();
-local GreetingsService();
-local CheckInService();
-
-// ....
-System.out.println(<![CheckInService].welcomeMessage("Test"));
+[System].out.println(?![CheckInService].welcomeMessage("Test"));
 ----
 
 Sometimes there is a need to disambiguate which component should be used if several candidate components are available.
 
 [source]
 ----
-local TemplateEngine();
-local var helloService = GreetingsService();
-local var hiService = GreetingsService(#template "Hi, %s!");
-local CheckInService(); // compile error here
+local [TemplateEngine]();
+local var helloService = [GreetingsService]();
+local var hiService = [GreetingsService](#template "Hi, %s!");
+local [CheckInService](); // compile error here
 ----
 
 In that case, it is not clear which `GreetingsService` should be used. It is possible to disambiguate using named parameters or the inject operator `<|`. So one of the following two forms could be used:
 
 [source]
 ----
-local CheckInService(#greetingsService hiService);
-local CheckInService(<| hiService);
+local [CheckInService](#greetingsService hiService); // using parameter name
+local [CheckInService](<| hiService); // not caring about parameter name
 ----
 
 Note, component dependencies are searched only in the current lexical context, so it is not possible to fetch a dependency from another module unless it is somehow declared in the context.
@@ -357,7 +348,7 @@ It is also possible to declare that a dependency is optional, using Java's `Opti
 [source]
 ----
 holon class CheckInService {
-    in Optional[GreetingsService];
+    in [Optional[GreetingsService]];
     fn welcomeMessage(user : String) {
         return greetingsServiceOptional
             .map {it.greeting(user) + " "}
@@ -366,14 +357,14 @@ holon class CheckInService {
 }
 ----
 
-In that case, it is possible to use `CheckInService` even without `GreetingsService`; the suffix `Optional` is added for optional name generation. The operator `<?[Type]` allows using an optional value of that type. If there is more than one value that could theoretically be injected, it is an error.
+In that case, it is possible to use `CheckInService` even without `GreetingsService`; the suffix `Optional` is added for optional name generation. The operator `??[Type]` allows using an optional value of that type. If there is more than one value that could theoretically be injected, it is an error.
 
 [source]
 ----
 holon class CheckInService {
-    in Optional[GreetingsService];
+    in [Optional[GreetingsService]];
     fn welcomeMessage(user : String) {
-        return <?[GreetingsService]
+        return ??[GreetingsService]
             .map {it.greeting(user) + " "}
             .orElse("") + "Please check-in today!";
     }
@@ -395,14 +386,14 @@ holon class CheckInService {
 }
 ----
 
-The expression `<*[Type]` injects zero or more elements from the context. The result of the expression is a list of elements.
+The expression `?*[Type]` injects zero or more elements from the context. The result of the expression is a list of elements.
 
 [source]
 ----
 holon class CheckInService {
     in List[GreetingsService];
     fn welcomeMessage(user : String) {
-        return <*[GreetingsService].stream()
+        return ?*[GreetingsService].stream()
             .map{it.greeting(user)}
             .collect(Collectors.joining(" ")) + "Please check-in today!";
     }
@@ -416,28 +407,28 @@ During the list injection, a larger list is created that is a concatenation of l
 holon class CheckInService {
     in List[GreetingsService];
     in TemplateEngine;
-    local GreetingsService(#template '%s!');
+    local [GreetingsService](#template '%s!');
     fn welcomeMessage(user : String) {
-        return <*[GreetingsService].stream()
+        return ?*[GreetingsService].stream()
             .map{it.greeting(user)}
             .collect(Collectors.joining(" ")) + "Please check-in today!";
     }
 }
 ----
 
-There, `<*[GreetingsService]` will be a new list containing the input list and the local `GreetingsService` as the last element. If the stream is immediately used, it will be replaced by a concatenation of streams.
+There, `?*[GreetingsService]` will be a new list containing the input list and the local `GreetingsService` as the last element. If the stream is immediately used, it will be replaced by a concatenation of streams.
 
 Then in the code below, the check-in service will print all messages:
 
 [source]
 ----
-local TemplateEngine();
-local GreetingsService();
-local GreetingsService(#template "Hi, %s!");
-local CheckInService();
+local [TemplateEngine]();
+local [GreetingsService]();
+local [GreetingsService](#template "Hi, %s!");
+local [CheckInService]();
 
 // ...
-System.out.println(checkInService.welcomeMessage("Test"));
+System.out.println(?![CheckInService].welcomeMessage("Test"));
 ----
 
 The "local" statements modify the current lexical environment by adding a holon instance to it. Later "local" statements are linked to the components in the environment.
@@ -452,10 +443,10 @@ The `out` object behaves like `local`, but it is also exposed to the lexical con
 ----
 enum GreetingType { case FORMAL; case INFORMAL; };
 holon class CheckInServiceFactory {
-    in explicit greetingType : GreetingType = GreetingType.FORMAL;
+    ? greetingType : GreetingType = [GreetingType].FORMAL;
     in TemplateEngine;
-    local GreetingsService(
-        #template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
+    local [GreetingsService](
+        #template greetingType == [GreetingType].INFORMAL ? "Hi, %s!" : "Hello, %s!");
     out CheckInService();
 }
 holon class LoginProcess {
@@ -465,8 +456,8 @@ holon class LoginProcess {
 // ...
 holon class LoginSubsystem {
     in TemplateEngine;
-    local CheckInServiceFactory(#greetingType GreetingType.INFORMAL)
-    out LoginProcess();
+    local [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL)
+    out [LoginProcess]();
 }
 ----
 
@@ -475,43 +466,43 @@ Then the following is possible:
 
 [source]
 ----
-local TemplateEngine();
-local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
-local LoginProcess();
+local [TemplateEngine]();
+local [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL);
+local [LoginProcess]();
 ----
 
 In that case, `LoginProcess` will be injected and expanded to the following full form:
 
 [source]
 ----
-local loginProcess : LoginProcess = LoginProcess.create(#checkInService checkInServiceFactory.checkInService);
+local loginProcess : LoginProcess = [LoginProcess].create(#checkInService checkInServiceFactory.checkInService);
 ----
 
 In case a disambiguation is needed, the operator `<|` could be used as well.
 
 [source]
 ----
-local TemplateEngine();
-local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
-local LoginProcess(<| checkInServiceFactory.checkInService);
+local [TemplateEngine]();
+local [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL);
+local [LoginProcess](<| checkInServiceFactory.checkInService);
 ----
 
-It is also possible to declare an alias using a `let` statement:
+It is also possible to declare an alias using a `val` statement:
 
 [source]
 ----
-local TemplateEngine();
-local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
-local let checkInService = checkInServiceFactory.checkInService;
-local LoginProcess(<| checkInService);
+local [TemplateEngine]();
+local [CheckInServiceFactory](#greetingType GreetingType.INFORMAL);
+local val checkInService = ?![CheckInServiceFactory].checkInService;
+local [LoginProcess](<| checkInService);
 ----
 
 It is possible to use the `*` modifier with the following syntax, to make it possible to use names of `out` holons without prefixing them with the factory name. They are available under a name derived from the type name, rather than the source holon name, to detect conflicts earlier. This modifier creates implicit `let` statements for all `out` parameters.
 
 [source]
 ----
-local TemplateEngine();
-local * CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+local [TemplateEngine]();
+local * [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL);
 local LoginProcess(<| checkInService);
 ----
 
@@ -524,8 +515,8 @@ It is possible to use `default` and `Optional` to ensure that a component is ava
 holon class EnableTemplateEngineIfMissing {
     in Optional[TemplateEngine];
     out fn default templateEngine() {
-        out templateEngineOptional.orElseOut<>{
-            out TemplateEngine();
+        out templateEngineOptional.orElseHolon<>{
+            out [TemplateEngine]();
         };
     };
 };
@@ -537,8 +528,8 @@ The `out` component could be specified as locally injected and exported. This is
 
 [source]
 ----
-local TemplateEngine();
-local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+local [TemplateEngine]();
+local [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL);
 out let checkInService : CheckInService = checkInServiceFactory.checkInService;
 ----
 
@@ -547,7 +538,7 @@ The shorter forms are:
 [source]
 ----
 out let checkInService = checkInServiceFactory.checkInService;
-out <![CheckInService];
+out ?![CheckInService];
 ----
 
 
@@ -561,10 +552,6 @@ There are the following lifetime scopes for holon components:
 * `invoke` - this scope is for function invocations and field access.
 * `async invoke` - this scope is for asynchronous function invocations, currently only `CompletableFuture` is supported.
 * `prototype` - for this scope, an object is created each time it is injected (TODO: it will likely be renamed in the future, but I'm still trying to figure out a better name).
-
-Additional scopes:
-
-* `explicit` - this scope modifier means that the component is not subject to automatic dependency injection in the current holon component.
 
 It might look as if "out" components could create a long nested tree of components available in the nested context. However, compilers and linters could impose limits on depth and make compilation or code analysis error out of it. Such a tree is a kind of "God Object" antipattern for holons, so it should not happen in realistic programs. Recursive trees also need to be detected as an error by the compiler.
 
@@ -587,75 +574,55 @@ The typical system has three phases:
 2. Activity
 3. Cleanup
 
-The compile-time and static holons are assumed to live forever after they are initialized. However, instance holons often need cleanup, for example, closing database connections or doing other actions. For that purpose, there are scopes and scoped holons.
+The compile-time and static holons are assumed to live forever after they are initialized. However, instance holons often need cleanup, for example, closing database connections or doing other actions. For that purpose, there are scopes and disposable holons.
 
-The scoped holons have the modifier `scoped`.
-
-The scoped holons implement Java's `AutoCloseable` interface and provide a `close()` method.
-
-During construction, if creation of a scoped holon fails, all already created scoped sub-holons are closed. The close method that closes all resources in reverse order is generated for scoped holons. The close method can be implemented explicitly; in that case, it should take care of all open resources.
-
-The close method for holons allows only subclasses of `RuntimeException` or `Error` to be thrown. Other exceptions need to be wrapped. Multiple close exceptions are added to the first exception.
-
-For wrapping non-holon scoped values, a special scoped holon `Resource` is used, which uses the close method for `AutoCloseable`, or allows providing a custom close operation. Note, if `Resource` is used with `null`, there still could be a cleanup method, and this allows creating custom cleanup actions.
+The disposable holons do not have the modifier, but non-disposable have modifier `flyweight`. The disposable holons do not have public constructor, but have newHolon static method that returns `Disposable[H]` wrapper:
 
 [source]
 ----
-holon class scoped Resource[T] {
-    var resource : T;
-    var cleanup : Runnable;
-
-    fn get() : T {
-        if (cleanup == null) {
-            throw IllegalStateException("Resource is closed");
-        }
-        return resource;
-    }
-
-    fn static of[T](resource : T, Runnable cleanup) : Resource[T] {
-        return create(#resource resource, #cleanup cleanup);
-    }
-
-    fn static ofCleanup(Runnable cleanup) : Resource[Void] {
-        return create(#resource null, #cleanup cleanup);
-    }
-
-    fn static ofCloseable[T](resource : T) : Resource[T] with {
-        type T {extends AutoCloseable;};
-    } as {
-        return create(#resource resource) #cleanup {
-            try {
-                resource.close();
-            } catch(e : RuntimeException | Error ) {
-                throw e;
-            } catch(e : Exception) {
-                throw new CompletionException(e);
-            }
-        };
-    }
-
-    fn close() {
-        resource = null;
-        if (cleanup == null) {
-            return;
-        }
-        try {
-            cleanup.run();
-        } finally {
-            cleanup = null;
-        }
-    }
-
-    fn isClosed() : boolean {
-        return cleanup == null;
-    }
-}
+class final Disposable[H] with {
+    @HolonType[H];
+} as {
+    /// The owned object that will need some disposing later
+    val owned : H { @Accessor};
+    /// The disposer for the object. Note, if there is checked exception thrown during disposal process,
+    /// it should be wrapped into {@link HolonDestructionException}.
+    val disposer : Consumer[H];
+    // rest of api skipped
+};
 ----
 
 
-Not all systems need a cleanup phase, but when it is needed, it is critical.
+During construction, if creation of a scoped holon fails, all already created scoped sub-holons are closed. The close method that closes all resources in reverse order is generated for scoped holons. The close method can be implemented explicitly; in that case, it should take care of all open resources.
 
-NOTE: Currently, it is under consideration whether holons should be scoped or non-scoped by default. Also, it is still under consideration whether this should be a language feature or a library feature. It is possible to implement it either way.
+The dispose method for holons allows only subclasses of `RuntimeException` or `Error` to be thrown. Other exceptions need to be wrapped. Multiple exceptions are added to the first exception.
+
+For wrapping non-holon disposed values, a special scoped holon `Resource` is used, which uses the close method for `AutoCloseable`, or allows providing a custom close operation. Note, if `Resource` is used with `null`, there still could be a cleanup method, and this allows creating custom cleanup actions.
+
+[source]
+----
+holon Resource[T] with {
+    extends DelegatingHolon[T];
+} as {
+    val value : T;
+    val close : AutoCloseable;
+    @PreDestroy { close.close(); };
+
+    out fn public static of[T](resource : T, closeAction : AutoCloseable) : Resource[T] {
+        out [Resource[T]](resource, closeAction);
+    }
+
+    out fn public static of[T](resource : T) : Resource[T] with {
+        type T with { extends AutoCloseable };
+    } as {
+        out of(resource, resource);
+    };
+
+    fn override get() : T { return value; };
+};
+----
+
+Not all systems need a cleanup phase, but when it is needed, it is critical.
 
 === Negative Dependencies
 
@@ -710,10 +677,11 @@ It is possible to specify that a holon is a factory for other holons:
 enum GreetingType { case FORMAL; case INFORMAL; };
 holon class CheckInServiceFactory {
     in TemplateEngine;
-    out fn checkInService {
-        in explicit greetingType : GreetingType = GreetingType.FORMAL;
-        local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
-        out CheckInService();
+    out fn checkInService with {
+        ? greetingType : GreetingType = [GreetingType].FORMAL;
+    } as {
+        local [GreetingsService](#template greetingType == [GreetingType].INFORMAL ? "Hi, %s!" : "Hello, %s!");
+        out [CheckInService]();
     }
 }
 holon class LoginProcess {
@@ -726,17 +694,18 @@ So then it could be used as follows:
 
 [source]
 ----
-local TemplateEngine();
-local CheckInServiceFactory();
-local let checkInService : CheckInService = checkInServiceFactory.checkInService(#greetingType GreetingType.INFORMAL)
-local LoginProcess();
+local [TemplateEngine]();
+local [CheckInServiceFactory]();
+local let checkInService : CheckInService = checkInServiceFactory.checkInService(#greetingType [GreetingType].INFORMAL)
+local [LoginProcess]();
 ----
 
-It is possible to use the `*` modifier for factories as well, and it will expose methods to the local context. The variables for out components could also be named by type name (rather than explicitly).
+It is possible to use the construct `import (expression).*;` modifier for factories as well, and it will expose methods to the local context. The variables for out components could also be named by type name (rather than explicitly).
 
 [source]
 ----
-local * CheckInServiceFactory();
+local [CheckInServiceFactory]();
+import (?![CheckInServiceFactory]).*;
 
 // all lines below are equivalent
 local val checkInService : CheckInService = checkInServiceFactory.checkInService(#greetingType GreetingType.INFORMAL)
@@ -766,9 +735,9 @@ With this, it is possible to write:
 
 [source]
 ----
-local TemplateEngine();
-local CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
-local LoginProcess();
+local [TemplateEngine]();
+local [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL);
+local [LoginProcess]();
 ----
 
 And in this case, the following line will be implicitly generated because `CheckInService` is missing from the lexical context and is required by `LoginProcess`:
@@ -784,18 +753,18 @@ Static out functions could provide alternative create methods.
 [source]
 ----
 holon class CheckInServiceFactory {
-    in explicit greetingType : GreetingType = GreetingType.FORMAL;
+    ? greetingType : GreetingType = [GreetingType].FORMAL;
     out fn static informal() {
-        out CheckInServiceFactory(#greetingType GreetingType.INFORMAL);
+        out [CheckInServiceFactory](#greetingType [GreetingType].INFORMAL);
     };
     out fn default checkInService {
         in TemplateEngine;
-        local GreetingsService(#template greetingType == INFORMAL ? "Hi, %s!" : "Hello, %s!");
-        out CheckInService();
+        local GreetingsService(#template greetingType == [GreetingType].INFORMAL ? "Hi, %s!" : "Hello, %s!");
+        out [CheckInService]();
     };
 }
 
-local * CheckInServiceFactory.informal();
+local [CheckInServiceFactory].informal();
 ----
 
 
@@ -809,7 +778,7 @@ holon class LoginProcessFactory {
         in TemplateEngine
         out CheckInService
     };
-    out LoginProcess();
+    out [LoginProcess]();
 };
 ----
 
@@ -1110,9 +1079,9 @@ holon class DaoImpl with {
 } as {
     in NamedJdbcTemplate;
     in TransactionManager;
-    local DictionaryDao();
-    out ContactDaoImpl();
-    out CustomerDaoImpl();
+    local [DictionaryDao]();
+    out [ContactDaoImpl]();
+    out [CustomerDaoImpl]();
 }
 ----
 
@@ -1161,7 +1130,7 @@ holon class WorkerProperties {
 }
 holon class scoped WorkerManager {
     in WorkerProperties;
-    local workerDynamicList : DynamicList[Worker] = <![WorkerProperties].numberOfWorkers.repeat <> {
+    local workerDynamicList : DynamicList[Worker] = ?![WorkerProperties].numberOfWorkers.repeat <> {
         ?n;
         out Worker(n);
     }

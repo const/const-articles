@@ -1,6 +1,6 @@
 = Measuring Abstraction Level of Programming Languages
 Konstantin Plotnikov <constantine.plotnikov@gmail.com>
-0.1.5, 2026-05-18
+0.1.6, 2026-05-18
 :sectnums:
 :toc:
 :toclevels: 4
@@ -21,6 +21,7 @@ This is the first article in the series, and its primary goal is to introduce th
 |===
 | Revision | Date | Comment
 
+| 0.1.6   | 2026-07-15 | Added more references, small fixes
 | 0.1.5   | 2026-05-18 | Added Coq LLM discussion, appendix on memory
 | 0.1.4   | 2026-05-06 | Added Coq discussion, minor clarifications on level translation, style fixes
 | 0.1.3   | 2026-05-02 | Clarified reasoning cost topology, integrated practical diagnostics, refined Level 5 framing
@@ -40,7 +41,7 @@ If we consider language levels, there are clear improvements in abstraction leve
 
 1. *"Flat" Languages*: FORTRAN 66, BASIC (unstructured), Assembler (non-macro), Machine Code. These languages have global namespaces, indexed access to memory, etc.
 
-2. *Structured Programming*: C, Pascal, FORTRAN 77. These languages implement structured programming approach and use blocks, procedures, data structures, hierarchies, and recursion to organize the code.
+2. *Structured Programming*: C, Pascal, FORTRAN 77 (however, the transition to structured programming completed only at FORTRAN 90). These languages implement structured programming approach and use blocks, procedures, data structures, hierarchies, and recursion to organize the code.
 
 3. *Functional and Object-Oriented Programming*: {cpp}, Rust, Haskell, Java, C#, and FORTRAN 2003. These languages provide mechanisms to work with partially known entities like generics, interfaces, classes, functions, closures, and so on. There are different opinions on what is higher level in discussions of FP vs. OOP.
 
@@ -78,7 +79,7 @@ The cost of steps 1 and 2 dominates development time. For any given task, the co
 | *Cognitive Pollution* → Context switching, wasted time, reduced quality
 |===
 
-Well-designed systems maximize the *Ideal Code* quadrant. This explains the **code review paradox**: 10 lines changed trigger intense scrutiny, while 30 files touched across multiple modules often get "LGTM". This is not reviewer negligence; it is context exhaustion. Human working memory cannot hold arbitrary amounts of code; beyond a threshold, reasoning collapses into pattern-matching.
+The critical question becomes: _what determines an abstraction’s power to partition reasoning space so that the *Ideal Code* quadrant is maximized?_ Empirically, higher-level languages make complex systems easier to maintain, suggesting that abstraction level directly correlates with how effectively a language’s constructs divide the reasoning graph into safely ignorable boundaries.
 
 === The Project History View: How Complexity Accumulates
 Over time, behavioral complexity grows due to changing requirements, domain understanding, bug fixes, and external integrations. The cognitive cost of the per-task steps does not remain constant. In different languages, the cognitive complexity growth curve follows different trajectories:
@@ -86,13 +87,31 @@ Over time, behavioral complexity grows due to changing requirements, domain unde
 image::images/diagram1.png[complexity growth diagram]
 .The diagram shows cognitive complexity (y‑axis) vs. behavioral complexity (x‑axis). Lower‑level languages start with lower initial complexity but experience steeper growth. Higher‑level languages have higher entry cost but flatter growth.
 
-Key observations from this curve:
+Key observations reflected in this curve:
 
-* Lower-level languages have lower entry costs. Their primitives are easier to grasp initially, but there are simply too many of them to coordinate at scale.
+* Lower-level languages have lower entry costs. Their building blocks are easier to grasp initially, but it is harder to maintain connections between them in the mind.
 * Behavioral complexity causes non-linear growth in cognitive complexity. Eventually, every program reaches an unmaintainable threshold where the per-task cost exceeds human capacity.
 * Higher-level languages slow this growth. They enable us to implement more complex behavior before hitting that threshold.
 
 The "program" here is not limited to a single OS application. A set of related microservices maintained by a team, sharing concepts and code, constitutes a single reasoning scope.
+
+[NOTE]
+====
+**Observations in favor of the Flat → Structured "flatter curve"**
+
+While large-scale maintenance studies are rare, cognitive psychology research directly supports the scaling benefit of structured control flow.
+
+* A controlled experiment link:https://link.springer.com/article/10.3758/BF03203778[Sheppard & Curtis, 1981] asked programmers to anticipate the next line of code in structured vs. unstructured programs. Structured code was significantly more comprehensible — and critically, *the advantage was more pronounced for long, complex programs*. The benefit is negligible at ~50 LOC (where the entire program fits in working memory) but becomes essential at scale.
+* Dijkstra's seminal letter link:https://www.cs.utexas.edu/~EWD/transcriptions/EWD02xx/EWD215.html["Go To Statement Considered Harmful" (EWD215)] provides the foundational explanation: unstructured jumps force the reader to maintain a global timeline of possible execution paths, while structured blocks enable local reasoning and chunking.
+
+**Observations in favor of the Structured → OOP/FP "flatter curve"**
+
+Direct, freely accessible studies comparing procedural vs. contract-based maintenance scaling are rare. However, proxy evidence supports the "flatter curve" argument:
+
+* An arXiv study of ~785K Java methods link:https://arxiv.org/pdf/2205.01842[Chowdhury & Holmes, 2022] found that keeping methods ≤24 SLOC reduces change- and bug-proneness. Decomposing large methods into smaller, contract-bounded units lowers maintenance effort.
+* Recent cognitive-load research link:https://arxiv.org/pdf/2103.00821[Antinyan et al., 2021] suggests that structural representations may reduce comprehension effort.
+* Observation: Large C codebases (Linux kernel, PostgreSQL) frequently implement abstraction patterns typically associated with higher‑level languages: function pointers for polymorphic dispatch, opaque structs for data hiding, manual vtables for interface‑like behavior. This suggests that when behavioral complexity grows, developers naturally reach for stronger abstraction, even if the language doesn't provide them natively.
+====
 
 === Connecting the Views
 
@@ -169,7 +188,7 @@ Names do not have to be explicit. In the sequence, items are named by their posi
 ** A human operating a calculator: each key press transforms the display based solely on the current value and the operation; the calculator does not “know” the sequence of previous keys.
 ** A CPU logically (according to its contract) does the same: it fetches an instruction, reads registers and memory, updates them, and then forgets everything except the new state. The CPU has no concept of “program” – only state transformation.
 
-- **Level 2** is the sequential machine contract (ISA) that *preserves order* across steps. It abstracts away the fact that each step is stateless; it gives the illusion of a linear, ordered execution. Processors implement this contract, but internally they may execute speculatively and out‑of‑order – as long as the observable sequential semantics are preserved.
+**Level 2** is defined by the sequential machine contract (the ISA), which guarantees program‑order semantics across discrete state‑transforming operations. It provides the illusion of logical sequential execution by hiding microarchitectural complexity—speculation, out‑of‑order execution, and pipelining—behind a strict observable contract. The sequential order is emergent: the CPU reorders and optimizes internally, but the ISA ensures that *observable* state evolves strictly in program order.
 
 We do not model hardware microarchitecture because silicon already interprets Level 2; Level 1 execution is handled transparently by the hardware’s state‑update machinery.
 
@@ -523,7 +542,7 @@ There should never be more than one reason for a class to change.
 
 This principle states that class should be responsible for one thing. If there are multiple things the class is responsible for, then when reasoning about the class behavior we need to consider interactions of these responsibilities. For example, when changing some behavior, we need to consider all responsibilities of the class. Thus, we have multiplicative cost of change in the worst case.
 
-**Framework interpretation**: Isolating responsibilities partitions the reasoning graph, converting multiplicative interaction cost into additive cost.
+**Framework interpretation**: Isolating responsibilities partitions the reasoning graph and reduce contract size involved into individual reasoning steps.
 
 ===== Open–Closed Principle
 [quote]
@@ -593,7 +612,9 @@ This is the point where I disagree with F. Brooks. The higher level languages af
 
 For example, for a well-designed interface, we could stop thinking in that direction after examining the interface. We do not need to think about every implementation of this. Also, when implementing an interface, we do not need to think about every place that uses it; the interface is a contract that specifies what we need to do to support all these places.
 
-Higher-level abstractions do reduce code duplication through DRY: generics, interfaces, dependency injection, higher-order functions. And this reduction is often noticeable. However, the reduction is rarely as large as intuitively expected, and abstraction layers sometimes add boilerplate or setup overhead. The hidden cost of DRY is that reducing duplication couples previously independent sites. For some tasks, such as adapting a shared contract, the number of affected locations increases, expanding the reasoning scope and introducing unexpected links. The primary cognitive benefit of abstraction is not simply "less code"; it is scoped reasoning. By partitioning the codebase, abstractions ensure that for most tasks, you only need to examine a bounded subset. Well-designed abstractions maximize the code you safely ignore while keeping coupling explicit and localized.
+Higher-level abstractions do reduce code duplication through DRY: generics, interfaces, dependency injection, higher-order functions. And this reduction is often noticeable. However, the reduction is rarely as large as intuitively expected, and abstraction layers sometimes add boilerplate or setup overhead.
+
+However, the hidden cost of DRY is that reducing duplication couples previously independent sites. For some tasks, such as adapting a shared contract, the number of affected locations increases, expanding the reasoning scope and introducing unexpected links. The primary cognitive benefit of abstraction is not simply "less code"; it is scoped reasoning. By partitioning the codebase, abstractions ensure that for most tasks, you only need to examine a bounded subset. Well-designed abstractions maximize the code you safely ignore while keeping coupling explicit and localized.
 
 This could be worked around by implementing higher-level concepts in the lower-level languages as internal DSL. However, it adds reasoning cost as there is a need to reverse-engineer these concepts from the code and many high-level type-checks are missing. The consistency of these constructs also is harder to maintain.
 
@@ -623,13 +644,13 @@ If we consider cognitive scalability, we need to understand which concepts are o
 | BASIC (unstructured) | 2 - Flat |  | lines and global variables
 | Assembler | 2 - Flat |  | Instructions and labels
 | C, Pascal | 3 - Structured | Procedural | Functions, structs, blocks, expressions
-| Java, C#, {cpp} | 4 - Formal | OOFP | Interfaces, Classes, Methods
-| Haskell, OCaml | 4 - Formal | FOOP | Functions, Type Classes, Data Types
+| Java, C#, {cpp} | 4 - Formal | OOFP | Interfaces, classes, methods, generics
+| Haskell, OCaml | 4 - Formal | FOOP | Functions, type classes, generics, data types
 |===
 
 [NOTE]
 ====
-**Functional Programming as a bridge**: Pure FP can be viewed as a transitional stage between structured programming and OOP/FP hybrids. It excels at formalizing Level 3 constructs (algebraic data types, pattern matching) and introduces Level 4 reasoning via higher-order functions. However, its treatment of existential types (interfaces) is often less ergonomic than OOP's, which is why mainstream languages tend toward hybrid models. This is not a failure of FP, it is evidence that language evolution is driven by *practical reasoning ergonomics*, not theoretical purity.
+**Functional Programming as a bridge**: Pure FP can be viewed as a transitional stage between structured programming and OOP/FP hybrids. It excels at formalizing Level 3 constructs (algebraic data types, pattern matching) and introduces Level 4 reasoning via higher-order functions and generics. However, its treatment of complex existential types (interfaces) is often less ergonomic than OOP's, which is why mainstream languages tend toward hybrid models.
 ====
 
 Concepts on the growth path are important, because they directly affect how we are reason about the program. With each added node, it is more complex to understand and modify code. And the way the nodes are connected shapes possible reasoning about the code.
@@ -680,13 +701,13 @@ The language of the simple non-programmable calculator conforms to this paradigm
 
 Let's consider Prolog as example (the specifically version ISO/IEC 13211-1:1995, as other versions of Prolog might add or remove features).
 
-The prolog data type is term that have functor (just a string with some equality check optimizations) and arguments. The term type is functor and arity. There is no existential types like interfaces, so predicates are referred by stateless pair of function and arity. The code part is predicates, that support recursion, but they could be referred to only as function pointers rather than function references.
+The prolog data type is term that have functor (just a string with some equality check optimizations) and arguments. The term type is functor and arity. There is no existential types like interfaces, so predicates are referred by stateless pair of functor and arity. The code part is predicates, that support recursion, but they could be referred to only as function pointers rather than function references.
 
 So Prolog is a level 3 language.
 
 Prolog was promoted as a general purpose language and replacement for the mainstream languages of that time. This did not work for a number of reasons. I think that primary reason was that as a level 3 language, it did not provide expected productivity boost because its cognitive scalability curve was about the same as the curve structured programming languages like C or Pascal. Even somewhat worse because it was a dynamically-typed language (see more later at <<dynamic-typing>>). And the task of finding solutions over finite domains does not happen that often in practice to offset usability and performance problems added in other areas. So Prolog is more like a side story of programming language evolution rather than a continuation of the main line of general purpose programming languages.
 
-NOTE: One of the current attempt at logic programming is https://en.wikipedia.org/wiki/Verse_(programming_language)[Verse]. It looks like a level 4 language, and it is unlikely that this language will produce a significant productivity boost comparing with a good level 4 languages like Kotlin. I lack domain experience to understand if it is good for niche uses like gamedev, but I do not see why I would want to switch to it from Java for modern enterprise applications.
+NOTE: One of the current attempt at logic programming is https://en.wikipedia.org/wiki/Verse_(programming_language)[Verse]. It looks like a level 4 language, and it is unlikely that this language will produce a significant productivity boost comparing with a good level 4 languages like Kotlin. I lack domain experience to understand if it is good for niche uses like gamedev, but I do not see why I would want to switch to it from Java for modern enterprise applications basing on its documentation.
 
 == Transition to New Levels
 
@@ -752,7 +773,7 @@ New concepts provide a new way of reasoning of the program along of new connecti
 
 The new concept types provide new reasoning pathways along with new kinds of concept connections. This is directly reflected in the code. These new types pathways are more expensive to navigate, but it is more clear for higher-level whether we need to navigate them at all, or not for the current reasoning step.
 
-This allows us to restrict reasoning scope, when we are locating pieces that affect specific behavior, or trying to predict effect of the change. So each new abstraction level on primary evolution vector greatly reduces software development and maintenance costs for idiomatic programs.
+This allows us to restrict reasoning scope, when we are locating pieces that affect specific behavior, or trying to predict effect of the change. So each new abstraction level on primary evolution vector greatly reduces software development and maintenance costs for big idiomatic programs.
 
 === Common Evolution Pattern
 
@@ -1404,7 +1425,7 @@ As it could be seen, the organizations evolved using the same path. And they als
 
 NOTE: This appendix examines Coq's module and typeclass systems as potential compositional mechanisms, not Coq's core logic or type theory.
 
-The abstraction‑level framework applies beyond general‑purpose programming and data systems. In proof assistants like Coq, we observe the same pattern: **constructs that approach Level 4 are composed via Level 2 mechanisms**, creating asymmetric reasoning boundaries that scale poorly as proof artefacts grow.
+The abstraction‑level framework applies beyond general‑purpose programming and data systems. In proof assistants like Coq, we could also observe that complexity management tools with high potential are restricted by their implementation.
 
 Coq provides `Module Type` (theory/interface), `Module` (model/implementation), and Functors (parameterized contracts). Yet these operate in a syntactic layer separate from the core proof language (the Calculus of Inductive Constructions, CIC). A module cannot be passed as a proof term, stored in a variable, or injected contextually into a proof script. **Module types are not first‑class in the term language**; while they define contracts, they cannot be referenced directly as hypotheses inside a proof.
 

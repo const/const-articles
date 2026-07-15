@@ -6,7 +6,7 @@ This section contains articles about language and system evolution.
 
 * 2025
 ** link:2025/01-measuring-language-level/MeasuringAbstractionLevelOfLanguages.adoc[Measuring Abstraction Level of Programming Languages]
-** link:2025/02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations]
+** link:2025/02-holon-composition/HolonComposition.adoc[Report on Holon/System Composition Operations (incomplete, work-in-progress)]
 ** link:2025/03-Primordial-Soup-Antipattern/Primordial-Soup-Antipattern.adoc[Primordial Soup Antipattern]
 
 == Old Articles from DZone
