@@ -495,14 +495,14 @@ When reasoning about a value that can be one of several variants, cognitive cost
 Every extraction site must account for all possible variants.
 
 * **Interface / contract (Level 4)**:
-`((number of referrers) + (number of variants)) × (used contract size)`
+`({zwsp}(number of referrers) + (number of variants){zwsp}) × (used contract size)`
 Callers reason only up to the interface boundary; implementers reason from it.
 
 In many contexts, reasoning topology is a dominant factor in cognitive load differences between these approaches, though syntax, learning overhead, and tooling also contribute.
 
 [NOTE]
 ====
-Functional Programming makes single-method objects exceptionally convenient. A single-method object is the second-simplest contract possible, and much of FP's practical power derives from the fact that when cognitive cost scales like `((referrers) + (variants)) × (contract_size)`, the `(contract_size)` component is kept minimal.
+Functional Programming makes single-method objects exceptionally convenient. A single-method object is the second-simplest contract possible, and much of FP's practical power derives from the fact that when cognitive cost scales like `({zwsp}(referrers) + (variants){zwsp}) × (contract_size)`, the `(contract_size)` component is kept minimal.
 ====
 
 This happens because we include a type into reasoning steps. Considering that https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence[a type corresponds to a formula] in the logic, and we use formula as parameter to another formula, this promotes our reasoning logic to the higher-order logic.
